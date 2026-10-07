@@ -111,7 +111,7 @@ void CSimulatorManager::CreateMap()
 
 void CSimulatorManager::CreateEntity(eTeam team, int count)
 {
-	CTeam* pTeam = new CTeam(team);
+	CTeam* pTeam = new CTeam(team, m_cMap->GetRegionCount());
 	m_vecTeam.push_back(pTeam);
 
 	for (int i = 0; i < count; i++)
@@ -120,6 +120,7 @@ void CSimulatorManager::CreateEntity(eTeam team, int count)
 		st_Pos SpawnPos = m_cMap->GetSpawnPos((int)team);
 
 		pEntity->Init(SpawnPos);
+		pEntity->SetTeam(pTeam);
 
 		TWHEEL* pTweel = new TWHEEL;
 		pTweel->TotalTimer = pEntity->GetUpdateTime();

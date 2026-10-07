@@ -83,6 +83,14 @@ typedef struct st_Pos
 		int dY = Y - pos.Y;
 		return static_cast<int>(sqrt(dX * dX + dY * dY));
 	}
+
+	int LengthLength(st_Pos pos)
+	{
+		int dX = X - pos.X;
+		int dY = Y - pos.Y;
+		return (dX * dX + dY * dY);
+	}
+
 }POS;
 
 struct st_PosInfo

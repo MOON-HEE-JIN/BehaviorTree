@@ -134,6 +134,24 @@ int CMap::GetNearRegionIndex(st_Pos pos)
 	return ret;
 }
 
+int CMap::GetEmptyRegion(std::vector<int>& vec, st_Pos pos)
+{
+	int min = 99999;
+	int ret = -1;
+	for (int i = 0; i < vec.size(); i++)
+	{
+		int index = vec[i];
+		int length = pos.LengthLength(m_vecRegion[index]->GetPos());
+		if (min > length)
+		{
+			min = length;
+			ret = index;
+		}
+	}
+
+	return ret;
+}
+
 CPartsBase* CMap::GetPart(st_Pos pos)
 {
 	__int64 key = ((__int64)pos.Y << 32 | pos.X);

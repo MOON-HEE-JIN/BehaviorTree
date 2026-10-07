@@ -16,7 +16,7 @@ void CBehaviorManager::CreateEntityIdleTree()
 
 	m_IdleTree.SetRoot(pSequenceRoot);
 	{
-		CBT_FindNearRegion* pNode = new CBT_FindNearRegion();
+		CBT_FindEmptyOccupyRegion* pNode = new CBT_FindEmptyOccupyRegion();
 		pSequenceRoot->Push(pNode);
 	}
 	{

@@ -71,6 +71,12 @@ public:
 	virtual int Run(CBlackBoard* bb);
 };
 
+class CBT_FindEmptyOccupyRegion : public CBT_Condition
+{
+public:
+	virtual int Run(CBlackBoard* bb);
+};
+
 class CBT_FindPath : public CBT_Condition
 {
 public:
@@ -111,6 +117,8 @@ public:
 // 1. 점령중인 지역 내 적군 존재 여부 확인
 // 1-1. 적군 존재시 점령중인 지역 내 적군과의 전투
 // 1-2. 점령중인 지역 내 적군 존재하지 않을시 점령중인 지역 내 점령 진행
+// 2. 점령중인 지역 내 위치로 이동
+// 3. 점령중인 지역 내 위치에서 점령 진행
 //
 
 class CBT_CheckEnemyInRegion : public CBT_Condition
@@ -119,3 +127,14 @@ public:
 	virtual int Run(CBlackBoard* bb);
 };
 
+class CBT_FindOccupyingRegionInPos : public CBT_Condition
+{
+public:
+	virtual int Run(CBlackBoard* bb);
+};
+
+class CBT_IsOccupyRegion : public CBT_Condition
+{
+public:
+	virtual int Run(CBlackBoard* bb);
+};

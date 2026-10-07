@@ -3,6 +3,7 @@
 #include "CEntity.h"
 #include "CMap.h"
 #include "CDoor.h"
+#include "CTeam.h"
 
 int CBT_Selector::Run(CBlackBoard* bb)
 {
@@ -207,4 +208,20 @@ int CBT_ConditionBranch::Run(CBlackBoard* bb)
 		return eBTresult::FAILD;
 
 	return m_vecChild[branch]->Run(bb);
+}
+
+int CBT_FindEmptyOccupyRegion::Run(CBlackBoard* bb)
+{
+	std::vector<int> vecRegionIndex;
+    bb->m_pTeam->GetEmptyRegion(vecRegionIndex);
+
+	int index = bb->m_pMap->GetEmptyRegion(vecRegionIndex, bb->m_pEntity->GetPos());
+
+	if (index == -1)
+		return eBTresult::FAILD;
+
+    bb->m_iTargetRegionIndex = index;
+    bb->m_eAstarTargetType = eAstarTargetType::Region;
+
+    return eBTresult::SUCCESS;
 }

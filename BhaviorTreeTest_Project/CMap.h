@@ -44,9 +44,10 @@ public:
 
 	const std::vector<CRegion*>& GetRegionVector() { return m_vecRegion; }
 	CRegion* GetRegion(int index);
-	int GetRegionCount() { return m_vecRegion.size(); }
+	int GetRegionCount() { return m_iMaxRegionCount; }
 	st_Pos GetSpawnPos(int index);
 	int GetNearRegionIndex(st_Pos pos);
+	int GetEmptyRegion(std::vector<int>& vec, st_Pos pos);
 	CPartsBase* GetPart(st_Pos pos);
 	int GetRegionIndex(st_Pos pos) { return m_vecMapStat[pos.Y][pos.X].iRegionIndex; }
 

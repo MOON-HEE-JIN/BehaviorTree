@@ -5,6 +5,8 @@
 #include <queue>
 #include <map>
 
+class CTeam;
+
 class CEntity :
     public CBaseObject
 {
@@ -31,10 +33,11 @@ public:
     CAIEntity* GetAIContorller() { return &m_Ai; }
     std::vector<st_Pos>& GetAstarPath() { return m_vecAstarPath; }
     bool GetMoveNextPosInfo(st_PosInfo& posinfo);
+
+    void SetTeam(CTeam* pTeam) { m_Ai.SetTeam(pTeam); }
+
     void InitAstarPathtoMovePath();
-
     void ChangeState(eState state) { m_eState = state; }
-
     int Move();
 };
 
