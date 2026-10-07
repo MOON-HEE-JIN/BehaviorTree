@@ -4,6 +4,7 @@ CBehaviorManager g_CBehaviorManager;
 
 CBehaviorManager::CBehaviorManager()
 {
+	InitNodeTrees();
 	CreateEntityIdleTree();
 }
 
@@ -15,7 +16,7 @@ void CBehaviorManager::CreateEntityIdleTree()
 
 	m_IdleTree.SetRoot(pSequenceRoot);
 	{
-		CBT_FindRegion* pNode = new CBT_FindRegion();
+		CBT_FindNearRegion* pNode = new CBT_FindNearRegion();
 		pSequenceRoot->Push(pNode);
 	}
 	{
@@ -23,32 +24,40 @@ void CBehaviorManager::CreateEntityIdleTree()
 		pSequenceRoot->Push(pNode);
 	}
 	{
-		CBT_MoveSelector* pMoveSelector = new CBT_MoveSelector();
-
-		CBT_Sequence* pSequenceDoor = new CBT_Sequence();
-		CBT_CheckDoor* pCheckDoor = new CBT_CheckDoor();
-		CBT_OpenDoor* pOpenDoor = new CBT_OpenDoor();
-		
-		pSequenceDoor->Push(pCheckDoor);
-		pSequenceDoor->Push(pOpenDoor);
-
-		CBT_Sequence* pSequenceMove = new CBT_Sequence();
-		CBT_IsMove* pIsMove = new CBT_IsMove();
-		CBT_Move* pMove = new CBT_Move();
-		
-		pSequenceMove->Push(pIsMove);
-		pSequenceMove->Push(pMove);
-		
-		{
-			pMoveSelector->Push(pSequenceMove);
-			pMoveSelector->Push(pSequenceDoor);
-		}
-
-		pSequenceRoot->Push(pMoveSelector);
+		pSequenceRoot->Push(m_pMoveSelector);
 	}
 }
 
 void CBehaviorManager::CreateEntityOccupyTree()
 {
 
+}
+
+void CBehaviorManager::InitNodeTrees()
+{
+	CreateMoveSelector();
+}
+
+void CBehaviorManager::CreateMoveSelector()
+{
+	m_pMoveSelector = new CBT_MoveSelector();
+
+	CBT_Sequence* pSequenceDoor = new CBT_Sequence();
+	CBT_CheckDoor* pCheckDoor = new CBT_CheckDoor();
+	CBT_OpenDoor* pOpenDoor = new CBT_OpenDoor();
+
+	pSequenceDoor->Push(pCheckDoor);
+	pSequenceDoor->Push(pOpenDoor);
+
+	CBT_Sequence* pSequenceMove = new CBT_Sequence();
+	CBT_IsMove* pIsMove = new CBT_IsMove();
+	CBT_Move* pMove = new CBT_Move();
+
+	pSequenceMove->Push(pIsMove);
+	pSequenceMove->Push(pMove);
+
+	{
+		m_pMoveSelector->Push(pSequenceMove);
+		m_pMoveSelector->Push(pSequenceDoor);
+	}
 }

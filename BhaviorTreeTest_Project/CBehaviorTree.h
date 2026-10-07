@@ -38,6 +38,15 @@ public:
 	virtual int Run(CBlackBoard* bb);
 };
 
+class CBT_ConditionBranch : public CBTNode
+{
+private:
+	CBTNode* m_pCondition;
+
+public:
+	virtual int Run(CBlackBoard* bb);
+};
+
 class CBT_Condition : public CBTNode
 {
 public:
@@ -56,7 +65,7 @@ public:
 // 3. 이동
 //
 
-class CBT_FindRegion : public CBT_Condition
+class CBT_FindNearRegion : public CBT_Condition
 {
 public:
 	virtual int Run(CBlackBoard* bb);
@@ -99,11 +108,14 @@ public:
 };
 
 // OCCUPY 상태일때
-// 1. 점령중인 지역 내 랜덤 위치 이동
-// 2. 점령중인 지역 내 적군 존재 여부 확인
-// 3. 적군 존재시 점령중인 지역 내 적군과의 전투
-// 4. 점령중인 지역 내 적군 존재하지 않을시 점령중인 지역 내 점령 진행
-// 5. 점령 완료시 점령중인 지역 내 점령 완료 처리
+// 1. 점령중인 지역 내 적군 존재 여부 확인
+// 1-1. 적군 존재시 점령중인 지역 내 적군과의 전투
+// 1-2. 점령중인 지역 내 적군 존재하지 않을시 점령중인 지역 내 점령 진행
 //
 
+class CBT_CheckEnemyInRegion : public CBT_Condition
+{
+public:
+	virtual int Run(CBlackBoard* bb);
+};
 

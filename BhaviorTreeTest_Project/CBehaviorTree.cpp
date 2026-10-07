@@ -64,17 +64,33 @@ int CBT_Sequence::Run(CBlackBoard* bb)
     return ret;
 }
 
-int CBT_FindRegion::Run(CBlackBoard* bb)
+int CBT_FindNearRegion::Run(CBlackBoard* bb)
 {
     int index = bb->m_pMap->GetNearRegionIndex(bb->m_pEntity->GetPos());
     bb->m_iTargetRegionIndex = index;
+    bb->m_eAstarTargetType = eAstarTargetType::Region;
     return eBTresult::SUCCESS;
 }
 
 int CBT_FindPath::Run(CBlackBoard* bb)
 {
-    CRegion* pRegion = bb->m_pMap->GetRegion(bb->m_iTargetRegionIndex);
-    st_Pos goal = pRegion->GetPos();
+    st_Pos goal;
+    switch (bb->m_eAstarTargetType)
+    {
+	case eAstarTargetType::None:
+		return eBTresult::FAILD;
+	case eAstarTargetType::Region:
+    {
+        CRegion* pRegion = bb->m_pMap->GetRegion(bb->m_iTargetRegionIndex);
+        goal = pRegion->GetPos();
+    }
+		break;
+	case eAstarTargetType::Pos:
+		return eBTresult::FAILD;
+	default:
+		return eBTresult::FAILD;
+    }
+
     st_Pos start = bb->m_pEntity->GetPos();
 
     bool ret = bb->m_pMap->FindPath(start.X, start.Y, goal.X, goal.Y, bb->m_pEntity->GetAstarPath());
@@ -181,4 +197,14 @@ int CBT_IsMove::Run(CBlackBoard* bb)
         return eBTresult::SUCCESS;
 
 	return bb->m_pMap->GetPart(info.pos)->IsMove() ? eBTresult::SUCCESS : eBTresult::FAILD;
+}
+
+int CBT_ConditionBranch::Run(CBlackBoard* bb)
+{
+	int branch = m_pCondition->Run(bb);
+
+	if (branch >= m_vecChild.size())
+		return eBTresult::FAILD;
+
+	return m_vecChild[branch]->Run(bb);
 }

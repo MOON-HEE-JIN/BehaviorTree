@@ -21,6 +21,12 @@ private:
 	CBehaviorTree m_IdleTree;
 	CBehaviorTree m_CombatTree;
 	CBehaviorTree m_OccupyTree;
+
+private:
+	void InitNodeTrees();
+
+	CBT_MoveSelector* m_pMoveSelector;
+	void CreateMoveSelector();
 };
 
 extern CBehaviorManager g_CBehaviorManager;

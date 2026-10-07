@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <atomic>
+#include "Defines.h"
 
 class CEntity;
 class CMap;
@@ -17,5 +18,6 @@ public:
 	CMap* m_pMap;
 	st_RumtimeNodeInfo m_stRuntime;
 
+	eAstarTargetType m_eAstarTargetType;
 	int m_iTargetRegionIndex;
 };

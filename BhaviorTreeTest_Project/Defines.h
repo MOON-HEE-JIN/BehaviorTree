@@ -58,13 +58,13 @@ enum eBTresult
 	RUNNING,
 };
 
-enum eSkill_Index
+enum eAstarTargetType
 {
-	SKILL_None,
-	Move_Speed_Up,
-	Grenade,
-	SKILL_End
+	None,
+	Region,
+	Pos,
 };
+
 typedef struct st_Pos
 {
 	int X;
