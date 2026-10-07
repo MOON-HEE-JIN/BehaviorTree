@@ -1,0 +1,193 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="소스 파일">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="소스 파일\CTimerWheel">
+      <UniqueIdentifier>{cc9b7cc9-47c9-426c-af6c-4b7f6b7d8a4c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\CMap">
+      <UniqueIdentifier>{9e50d308-5b5d-496f-bd44-4e3270506083}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\Define">
+      <UniqueIdentifier>{5a769c8f-8987-43ea-8ea1-d99b0a29523d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\CSimulator">
+      <UniqueIdentifier>{68e26dd8-5ebe-480e-84c0-5b192a473a24}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\CObject">
+      <UniqueIdentifier>{bc472ea2-a87c-464d-9ce5-2e6c5932e3ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\CAstar">
+      <UniqueIdentifier>{a7c98ad6-559b-4d98-a3f4-5914b6359f2f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\Behavior">
+      <UniqueIdentifier>{feede594-a71c-4c95-b783-54ac8e5a427c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="소스 파일\AI">
+      <UniqueIdentifier>{b4c04471-ce6f-4e6f-9e72-b3a43105b489}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="framework.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="targetver.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="BhaviorTreeTest_Project.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="WinObject.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="WinThread.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="CTimerWheel.h">
+      <Filter>소스 파일\CTimerWheel</Filter>
+    </ClInclude>
+    <ClInclude Include="CTimerWheelManager.h">
+      <Filter>소스 파일\CTimerWheel</Filter>
+    </ClInclude>
+    <ClInclude Include="CMap.h">
+      <Filter>소스 파일\CMap</Filter>
+    </ClInclude>
+    <ClInclude Include="CRegion.h">
+      <Filter>소스 파일\CMap</Filter>
+    </ClInclude>
+    <ClInclude Include="UnionDefine.h">
+      <Filter>소스 파일\Define</Filter>
+    </ClInclude>
+    <ClInclude Include="CSimulatorManager.h">
+      <Filter>소스 파일\CSimulator</Filter>
+    </ClInclude>
+    <ClInclude Include="CBaseObject.h">
+      <Filter>소스 파일\CObject</Filter>
+    </ClInclude>
+    <ClInclude Include="CEntity.h">
+      <Filter>소스 파일\CObject</Filter>
+    </ClInclude>
+    <ClInclude Include="CAstar.h">
+      <Filter>소스 파일\CAstar</Filter>
+    </ClInclude>
+    <ClInclude Include="GUtill.h">
+      <Filter>소스 파일\Define</Filter>
+    </ClInclude>
+    <ClInclude Include="CStack.h">
+      <Filter>소스 파일\Define</Filter>
+    </ClInclude>
+    <ClInclude Include="CItemBase.h">
+      <Filter>소스 파일\CObject</Filter>
+    </ClInclude>
+    <ClInclude Include="Defines.h">
+      <Filter>소스 파일\Define</Filter>
+    </ClInclude>
+    <ClInclude Include="CPartsBase.h">
+      <Filter>소스 파일\CObject</Filter>
+    </ClInclude>
+    <ClInclude Include="CDoor.h">
+      <Filter>소스 파일\CObject</Filter>
+    </ClInclude>
+    <ClInclude Include="CAI.h">
+      <Filter>소스 파일\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="CBehaviorTree.h">
+      <Filter>소스 파일\Behavior</Filter>
+    </ClInclude>
+    <ClInclude Include="CBlackBoard.h">
+      <Filter>소스 파일\Behavior</Filter>
+    </ClInclude>
+    <ClInclude Include="CAIEntity.h">
+      <Filter>소스 파일\AI</Filter>
+    </ClInclude>
+    <ClInclude Include="CTeam.h">
+      <Filter>소스 파일\CSimulator</Filter>
+    </ClInclude>
+    <ClInclude Include="CBehaviorManager.h">
+      <Filter>소스 파일\Behavior</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BhaviorTreeTest_Project.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="WinThread.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="CTimerWheel.cpp">
+      <Filter>소스 파일\CTimerWheel</Filter>
+    </ClCompile>
+    <ClCompile Include="CTimerWheelManager.cpp">
+      <Filter>소스 파일\CTimerWheel</Filter>
+    </ClCompile>
+    <ClCompile Include="CRegion.cpp">
+      <Filter>소스 파일\CMap</Filter>
+    </ClCompile>
+    <ClCompile Include="CMap.cpp">
+      <Filter>소스 파일\CMap</Filter>
+    </ClCompile>
+    <ClCompile Include="CSimulatorManager.cpp">
+      <Filter>소스 파일\CSimulator</Filter>
+    </ClCompile>
+    <ClCompile Include="CBaseObject.cpp">
+      <Filter>소스 파일\CObject</Filter>
+    </ClCompile>
+    <ClCompile Include="CEntity.cpp">
+      <Filter>소스 파일\CObject</Filter>
+    </ClCompile>
+    <ClCompile Include="CAstar.cpp">
+      <Filter>소스 파일\CAstar</Filter>
+    </ClCompile>
+    <ClCompile Include="GUtill.cpp">
+      <Filter>소스 파일\Define</Filter>
+    </ClCompile>
+    <ClCompile Include="UnionDefine.cpp">
+      <Filter>소스 파일\Define</Filter>
+    </ClCompile>
+    <ClCompile Include="CDoor.cpp">
+      <Filter>소스 파일\CObject</Filter>
+    </ClCompile>
+    <ClCompile Include="CBlackBoard.cpp">
+      <Filter>소스 파일\Behavior</Filter>
+    </ClCompile>
+    <ClCompile Include="CAIEntity.cpp">
+      <Filter>소스 파일\AI</Filter>
+    </ClCompile>
+    <ClCompile Include="CTeam.cpp">
+      <Filter>소스 파일\CSimulator</Filter>
+    </ClCompile>
+    <ClCompile Include="CBehaviorTree.cpp">
+      <Filter>소스 파일\Behavior</Filter>
+    </ClCompile>
+    <ClCompile Include="CBehaviorManager.cpp">
+      <Filter>소스 파일\Behavior</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="BhaviorTreeTest_Project.rc">
+      <Filter>리소스 파일</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="small.ico">
+      <Filter>리소스 파일</Filter>
+    </Image>
+    <Image Include="BhaviorTreeTest_Project.ico">
+      <Filter>리소스 파일</Filter>
+    </Image>
+  </ItemGroup>
+</Project>
