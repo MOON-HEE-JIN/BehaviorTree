@@ -5,7 +5,7 @@ CSimulatorManager* g_SimulatorManager;
 CSimulatorManager::CSimulatorManager()
 {
 	m_iEntityId = 0;
-	
+
 	SetUpdateTime( 10 * 60 * 1 * 1000);
 
 	CreateMap();
@@ -15,33 +15,33 @@ CSimulatorManager::CSimulatorManager()
 	update->pObj = this;
 	update->eUpdateType = eTUpdateType::End;
 
-	m_cUpdateTimerWheel.Push(update);
+	m_updateTimerWheel.Push(update);
 
-	m_vecRenderObject.push_back((WinObject*)m_cMap);
+	m_vecRenderObject.push_back(m_pMap);
 
-	CreateEntity(eTeam::RED, 1);
-	CreateEntity(eTeam::BLUE, 1);
+	CreateEntity(eTeam::Red, 1);
+	CreateEntity(eTeam::Blue, 1);
 }
 
 CSimulatorManager::~CSimulatorManager()
 {
-	delete m_cMap;
+	delete m_pMap;
 }
 
 void CSimulatorManager::NewUpdatePushTimerWheel(TWHEEL* pTweel)
 {
-	m_cUpdateTimerWheel.Push(pTweel);
+	m_updateTimerWheel.Push(pTweel);
 }
 
 void CSimulatorManager::Update()
 {
-	m_cUpdateTimerWheel.Update();
+	m_updateTimerWheel.Update();
 
-	int nLoop = m_cUpdateTimerWheel.m_vecCompleteData.size();
-	std::vector<TWHEEL*>* vec = &m_cUpdateTimerWheel.m_vecCompleteData;
+	int nLoop = m_updateTimerWheel.GetCompleteDataCount();
+	const auto& vec = m_updateTimerWheel.GetCompleteData();
 	for (int i = 0; i < nLoop; i++)
 	{
-		TWHEEL* pTwheel = (*vec)[i];
+		TWHEEL* pTwheel = vec[i];
 		WinObject* pObject = pTwheel->pObj;
 
 		switch (pTwheel->eUpdateType)
@@ -55,7 +55,7 @@ void CSimulatorManager::Update()
 				break;
 			}
 			pTwheel->TotalTimer = pObject->GetUpdateTime();
-			m_cUpdateTimerWheel.Push(pTwheel);
+			m_updateTimerWheel.Push(pTwheel);
 
 			break;
 		case eTUpdateType::CoolTime:
@@ -72,9 +72,9 @@ void CSimulatorManager::Update()
 
 	}
 
-	m_cUpdateTimerWheel.m_vecCompleteData.clear();
+	m_updateTimerWheel.ClearCompleteData();
 
-	if (m_cMap->AllRegionOccupy())
+	if (m_pMap->AllRegionOccupy())
 	{
 		printf("\n=== End Simulator ===\n");
 	}
@@ -91,15 +91,15 @@ void CSimulatorManager::Render(HDC hdc)
 
 void CSimulatorManager::CreateMap()
 {
-	m_cMap = new CMap;
+	m_pMap = new CMap;
 
 	TWHEEL* pMapTweel = new TWHEEL;
 	pMapTweel->TotalTimer = 1000;
-	pMapTweel->pObj = m_cMap;
+	pMapTweel->pObj = m_pMap;
 	pMapTweel->eUpdateType = eTUpdateType::Object;
-	m_cUpdateTimerWheel.Push(pMapTweel);
+	m_updateTimerWheel.Push(pMapTweel);
 
-	const std::vector<CRegion*> vec = m_cMap->GetRegionVector();
+	const std::vector<CRegion*>& vec = m_pMap->GetRegionVector();
 	int nLoop = vec.size();
 
 	for (int i = 0; i < nLoop; i++)
@@ -110,19 +110,19 @@ void CSimulatorManager::CreateMap()
 		tweel->pObj = vec[i];
 		tweel->eUpdateType = eTUpdateType::Object;
 
-		m_cUpdateTimerWheel.Push(tweel);
+		m_updateTimerWheel.Push(tweel);
 	}
 }
 
 void CSimulatorManager::CreateEntity(eTeam team, int count)
 {
-	CTeam* pTeam = new CTeam(team, m_cMap->GetRegionCount());
+	CTeam* pTeam = new CTeam(team, m_pMap->GetRegionCount());
 	m_vecTeam.push_back(pTeam);
 
 	for (int i = 0; i < count; i++)
 	{
 		CEntity* pEntity = new CEntity(team, m_iEntityId++);
-		st_Pos SpawnPos = m_cMap->GetSpawnPos((int)team);
+		st_Pos SpawnPos = m_pMap->GetSpawnPos((int)team);
 
 		pEntity->Init(SpawnPos);
 		pEntity->SetTeam(pTeam);
@@ -132,7 +132,7 @@ void CSimulatorManager::CreateEntity(eTeam team, int count)
 		pTweel->pObj = pEntity;
 		pTweel->eUpdateType = eTUpdateType::Object;
 
-		m_cUpdateTimerWheel.Push(pTweel);
+		m_updateTimerWheel.Push(pTweel);
 
 		m_vecRenderObject.push_back(pEntity);
 		m_vecEntity.push_back(pEntity);
@@ -154,5 +154,6 @@ CEntity* CSimulatorManager::GetEntity(int id)
 	if(id < 0 || id >= (int)m_vecEntity.size())
 		return nullptr;
 
-	return m_vecEntity[id];
+	CEntity* pEntity = m_vecEntity[id];
+	return pEntity->GetId() == id ? pEntity : nullptr;
 }

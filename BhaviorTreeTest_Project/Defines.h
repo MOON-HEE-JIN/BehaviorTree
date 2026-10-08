@@ -4,40 +4,40 @@
 
 enum eSTAT_TYPE
 {
-	NONE,
-	WALL,
-	WINDOW,
-	DOOR,
+	None,
+	Wall,
+	Window,
+	Door,
 };
 
 enum eDirection
 {
-	NORTH,
-	SOUTH,
-	WEST,
-	EAST
+	North,
+	South,
+	West,
+	East
 };
 
 enum class eTeam
 {
-	NONE,
-	RED,
-	BLUE,
+	None,
+	Red,
+	Blue,
 };
 
 enum class eState
 {
-	NONE,
-	SPAWN,
-	IDLE,
-	COMBAT,
-	OCCUPY,
-	END,
+	None,
+	Spawn,
+	Idle,
+	Combat,
+	Occupy,
+	End,
 };
 
 enum class eCBlackBoardStatus
 {
-	NONE,
+	None,
 	Combat,
 	Occupy,
 	RunAway,
@@ -53,12 +53,12 @@ enum eTUpdateType
 
 enum eBTresult
 {
-	FAILD,
-	SUCCESS,
-	RUNNING,
+	Failed,
+	Success,
+	Running,
 };
 
-enum eAstarTargetType
+enum class eAstarTargetType
 {
 	None,
 	Region,
@@ -72,19 +72,19 @@ typedef struct st_Pos
 	st_Pos() { X = 0; Y = 0; }
 	st_Pos(int x, int y) { X = x; Y = y; }
 
-	bool operator ==(st_Pos& pos) {
+	bool operator ==(const st_Pos& pos) const {
 		if (this->X == pos.X && this->Y == pos.Y) return true;
 		return false;
 	}
 
-	int Length(st_Pos pos)
+	int Length(const st_Pos& pos) const
 	{
 		int dX = X - pos.X;
 		int dY = Y - pos.Y;
 		return static_cast<int>(sqrt(dX * dX + dY * dY));
 	}
 
-	int LengthLength(st_Pos pos)
+	int LengthLength(const st_Pos& pos) const
 	{
 		int dX = X - pos.X;
 		int dY = Y - pos.Y;

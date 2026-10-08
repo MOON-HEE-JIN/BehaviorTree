@@ -6,7 +6,10 @@
 class CBTNode
 {
 public:
-	~CBTNode();
+	CBTNode() = default;
+    virtual ~CBTNode();
+    CBTNode(const CBTNode&) = delete;
+    CBTNode& operator=(const CBTNode&) = delete;
 	virtual int Run(st_BlackBoard* bb) = 0;
 protected:
 	std::vector<CBTNode*> m_vecChild;
@@ -18,49 +21,53 @@ public:
 class CBehaviorTree
 {
 public:
-	~CBehaviorTree();
-	void Run(st_BlackBoard* bb) { m_Root->Run(bb); };
+	CBehaviorTree() = default;
+    ~CBehaviorTree();
+    CBehaviorTree(const CBehaviorTree&) = delete;
+    CBehaviorTree& operator=(const CBehaviorTree&) = delete;
+	void Run(st_BlackBoard* bb) { if (m_pRoot != nullptr) m_pRoot->Run(bb); }
 private:
-	CBTNode* m_Root;
+	CBTNode* m_pRoot = nullptr;
 public:
-	void SetRoot(CBTNode* pRoot) { m_Root = pRoot; }
+	void SetRoot(CBTNode* pRoot);
 };
 
 class CBT_Selector : public CBTNode
 {
 public:
-	virtual int Run(st_BlackBoard* bb);
+	int Run(st_BlackBoard* bb) override;
 };
 
 class CBT_Sequence : public CBTNode
 {
 public:
-	virtual int Run(st_BlackBoard* bb);
+	int Run(st_BlackBoard* bb) override;
 };
 
 class CBT_ConditionBranch : public CBTNode
 {
 private:
-	CBTNode* m_pCondition;
+	CBTNode* m_pCondition = nullptr;
 
 public:
-	void SetCondition(CBTNode* pCondition) { m_pCondition = pCondition; }
-	virtual int Run(st_BlackBoard* bb);
+    ~CBT_ConditionBranch() override;
+    void SetCondition(CBTNode* pCondition);
+	int Run(st_BlackBoard* bb) override;
 };
 
 class CBT_Condition : public CBTNode
 {
 public:
-	virtual int Run(st_BlackBoard* bb) {return 0;};
+	int Run(st_BlackBoard* bb) override {return 0;};
 };
 
 class CBT_Leaf : public CBTNode
 {
 public:
-	virtual int Run(st_BlackBoard* bb) { return 0; };
+	int Run(st_BlackBoard* bb) override { return 0; };
 };
 
-// IDLE 상태일때
+// Idle 상태일때
 // 1. 가까운 위치 찾기
 // 2. 이동 거리 추적
 // 3. 이동
@@ -69,52 +76,52 @@ public:
 class CBT_FindNearRegion : public CBT_Condition
 {
 public:
-	virtual int Run(st_BlackBoard* bb);
+	int Run(st_BlackBoard* bb) override;
 };
 
 class CBT_FindEmptyOccupyRegion : public CBT_Condition
 {
 public:
-	virtual int Run(st_BlackBoard* bb);
+	int Run(st_BlackBoard* bb) override;
 };
 
 class CBT_FindPath : public CBT_Condition
 {
 public:
-	virtual int Run(st_BlackBoard* bb);
+	int Run(st_BlackBoard* bb) override;
 };
 
 class CBT_MoveSelector : public CBT_Selector
 {
 public:
-	virtual int Run(st_BlackBoard* bb);
+	int Run(st_BlackBoard* bb) override;
 };
 
 class CBT_CheckDoor : public CBT_Condition
 {
 public:
-	virtual int Run(st_BlackBoard* bb);
+	int Run(st_BlackBoard* bb) override;
 };
 
 class CBT_OpenDoor : public CBT_Leaf
 {
 public:
-	virtual int Run(st_BlackBoard* bb);
+	int Run(st_BlackBoard* bb) override;
 };
 
 class CBT_IsMove : public CBT_Condition
 {
 public:
-	virtual int Run(st_BlackBoard* bb);
+	int Run(st_BlackBoard* bb) override;
 };
 
 class CBT_Move : public CBT_Leaf
 {
 public:
-	virtual int Run(st_BlackBoard* bb);
+	int Run(st_BlackBoard* bb) override;
 };
 
-// OCCUPY 상태일때
+// Occupy 상태일때
 // 1. 점령중인 지역 내 적군 존재 여부 확인
 // 1-1. 적군 존재시 점령중인 지역 내 적군과의 전투
 // 1-2. 점령중인 지역 내 적군 존재하지 않을시 점령중인 지역 내 점령 진행
@@ -125,17 +132,17 @@ public:
 class CBT_CheckEnemyInRegion : public CBT_Condition
 {
 public:
-	virtual int Run(st_BlackBoard* bb);
+	int Run(st_BlackBoard* bb) override;
 };
 
 class CBT_FindOccupyingRegionInPos : public CBT_Condition
 {
 public:
-	virtual int Run(st_BlackBoard* bb);
+	int Run(st_BlackBoard* bb) override;
 };
 
 class CBT_Occupy : public CBT_Leaf
 {
 public:
-	virtual int Run(st_BlackBoard* bb);
+	int Run(st_BlackBoard* bb) override;
 };

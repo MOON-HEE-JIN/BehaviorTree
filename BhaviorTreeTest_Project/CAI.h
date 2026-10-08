@@ -5,12 +5,9 @@
 class CAIController
 {
 public:
-	CAIController() {}
+	virtual ~CAIController() = default;
 
 protected:
-	
-	st_RumtimeNodeInfo m_stinfo;
-public:
-	st_BlackBoard m_board;
+	st_BlackBoard m_blackBoard;
 };
 

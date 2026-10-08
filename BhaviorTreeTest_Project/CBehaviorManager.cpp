@@ -4,18 +4,16 @@ CBehaviorManager g_CBehaviorManager;
 
 CBehaviorManager::CBehaviorManager()
 {
-	InitNodeTrees();
 	CreateEntityIdleTree();
 	CreateEntityOccupyTree();
 }
 
 void CBehaviorManager::CreateEntityIdleTree()
 {
-	m_IdleTree;
 
 	CBT_Sequence* pSequenceRoot = new CBT_Sequence();
 
-	m_IdleTree.SetRoot(pSequenceRoot);
+	m_idleTree.SetRoot(pSequenceRoot);
 	{
 		CBT_FindEmptyOccupyRegion* pNode = new CBT_FindEmptyOccupyRegion();
 		pSequenceRoot->Push(pNode);
@@ -25,17 +23,16 @@ void CBehaviorManager::CreateEntityIdleTree()
 		pSequenceRoot->Push(pNode);
 	}
 	{
-		pSequenceRoot->Push(m_pMoveSelector);
+		pSequenceRoot->Push(CreateMoveSelector());
 	}
 }
 
 void CBehaviorManager::CreateEntityOccupyTree()
 {
-	m_OccupyTree;
 
 	CBT_ConditionBranch* pBranchRoot = new CBT_ConditionBranch();
-	m_OccupyTree.SetRoot(pBranchRoot);
-	
+	m_occupyTree.SetRoot(pBranchRoot);
+
 	CBT_CheckEnemyInRegion* pCheckEnemy = new CBT_CheckEnemyInRegion();
 	pBranchRoot->SetCondition(pCheckEnemy);
 
@@ -47,24 +44,22 @@ void CBehaviorManager::CreateEntityOccupyTree()
 
 		pSequenceNoEnemy->Push(pFindOccupyRegion);
 		pSequenceNoEnemy->Push(pNode);
-		pSequenceNoEnemy->Push(m_pMoveSelector);
+		pSequenceNoEnemy->Push(CreateMoveSelector());
 		pSequenceNoEnemy->Push(pOccupy);
 
+        // BT 규칙 검토: 적 존재 분기에 자식이 없어 전투나 대기 행동이 실행되지 않는다.
 		CBT_Selector* pSelectorEnemy = new CBT_Selector();
-		
+
 		pBranchRoot->Push(pSequenceNoEnemy);
 		pBranchRoot->Push(pSelectorEnemy);
 	}
 }
 
-void CBehaviorManager::InitNodeTrees()
-{
-	CreateMoveSelector();
-}
 
-void CBehaviorManager::CreateMoveSelector()
+CBT_MoveSelector* CBehaviorManager::CreateMoveSelector()
 {
-	m_pMoveSelector = new CBT_MoveSelector();
+    // Each tree owns a separate movement subtree; raw ownership is never shared.
+	CBT_MoveSelector* pMoveSelector = new CBT_MoveSelector();
 
 	CBT_Sequence* pSequenceDoor = new CBT_Sequence();
 	CBT_CheckDoor* pCheckDoor = new CBT_CheckDoor();
@@ -81,7 +76,8 @@ void CBehaviorManager::CreateMoveSelector()
 	pSequenceMove->Push(pMove);
 
 	{
-		m_pMoveSelector->Push(pSequenceMove);
-		m_pMoveSelector->Push(pSequenceDoor);
+		pMoveSelector->Push(pSequenceMove);
+		pMoveSelector->Push(pSequenceDoor);
 	}
+    return pMoveSelector;
 }

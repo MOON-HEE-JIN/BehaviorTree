@@ -5,7 +5,7 @@ class CTimerWheelManager
 {
 public:
 	CTimerWheelManager();
-	~CTimerWheelManager();
+	virtual ~CTimerWheelManager();
 
 	void Update();
 
@@ -19,18 +19,18 @@ public:
 	void AddTimerWheel(int tick, int wheelsize);
 	virtual void PostProcessing();			// 타이머 다돈거 후처리
 
-	int GetCompleteDataCount() { return m_vecCompleteData.size(); }
-	std::vector<TWHEEL*> m_vecCompleteData;
+	int GetCompleteDataCount() const { return m_vecCompleteData.size(); }
+    const std::vector<TWHEEL*>& GetCompleteData() const { return m_vecCompleteData; }
+    void ClearCompleteData() { m_vecCompleteData.clear(); }
 private:
-	unsigned int m_iLastUpdateTime;
-	int m_iUpdateTick = 1;
+	std::vector<TWHEEL*> m_vecCompleteData;
 	double m_dRemainTime;
 
 	std::vector< CTimerWheel*> m_vecTimerWheel;
-	int	m_vecTimerWheelSize;
+	int	m_iTimerWheelCount;
 
-	LARGE_INTEGER m_LStartTime;
-	LARGE_INTEGER m_LEndTime;
-	LARGE_INTEGER m_Lfreq;
+	LARGE_INTEGER m_startTime;
+	LARGE_INTEGER m_endTime;
+	LARGE_INTEGER m_frequency;
 };
 

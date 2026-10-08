@@ -1,6 +1,5 @@
 ﻿#pragma once
 
-#include <atomic>
 #include "Defines.h"
 #include <unordered_map>
 
@@ -9,23 +8,22 @@ class CMap;
 class CTeam;
 class CBTNode;
 
-struct st_RumtimeNodeInfo
+struct st_RuntimeNodeInfo
 {
-	int m_iRet;
-	int m_iCurrentIndex;
+	int m_iCurrentIndex = 0;
 };
 
 struct st_BlackBoard
 {
-	CEntity* m_pEntity;
-	CMap* m_pMap;
-	CTeam* m_pTeam;
+	CEntity* m_pEntity = nullptr;
+	CMap* m_pMap = nullptr;
+	CTeam* m_pTeam = nullptr;
 
-	std::unordered_map<CBTNode*, st_RumtimeNodeInfo> m_mapRuntime;
-	
-	eAstarTargetType m_eAstarTargetType;
-	int m_iTargetRegionIndex;
-	int m_iOccupyRegionIndex;
+	std::unordered_map<CBTNode*, st_RuntimeNodeInfo> m_mapRuntime;
+
+	eAstarTargetType m_eAstarTargetType = eAstarTargetType::None;
+	int m_iTargetRegionIndex = -1;
+	int m_iOccupyRegionIndex = -1;
 	st_Pos m_stRegionCenterPos;
 	st_Pos m_stRegionInsidePos;
 
@@ -35,7 +33,7 @@ struct st_BlackBoard
 		m_mapRuntime.clear();
 	}
 
-	void PushRuntime(CBTNode* pNode, const st_RumtimeNodeInfo& info)
+	void PushRuntime(CBTNode* pNode, const st_RuntimeNodeInfo& info)
 	{
 		m_mapRuntime[pNode] = info;
 	}

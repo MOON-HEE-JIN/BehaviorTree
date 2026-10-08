@@ -3,7 +3,6 @@
 #include "CBaseObject.h"
 #include "UnionDefine.h"
 #include <vector>
-#include <unordered_map>
 
 class CPartsBase;
 class CEntity;
@@ -14,42 +13,38 @@ class CRegion :
 public:
     CRegion(st_Rect rect, int RenderSize, int index);
 
-    st_Rect m_Rect;
 
     void AddParts(CPartsBase* pPart);
 
     // WinObject을(를) 통해 상속됨
-    virtual void Update() override;
+    void Update() override;
 
-    virtual void Render(HDC hdc) override;
+    void Render(HDC hdc) override;
 private:
+    st_Rect m_rect;
     HPEN m_hRenderPen;
     HPEN m_hRenderRedPen;
     HPEN m_hRenderBluePen;
-    HBRUSH m_hRenderBrushBG;
-    HBRUSH m_hRenderBrushCloseDoor;
 
     int m_iRenderSize;
-    int m_iHalfRenderSize;
     int m_iIndex;
-    float m_iProgress;
+    float m_fProgress = 0.0f;
 
     std::vector<CPartsBase*> m_vecRenderParts;
-    std::unordered_map<int, std::vector<CPartsBase*>> m_mapParts;
 public:
-    int GetRegionIndex() { return m_iIndex; }
-    eTeam GetOccupyTeam() { return m_iOccupyTeam; }
+    int GetRegionIndex() const { return m_iIndex; }
+    eTeam GetOccupyTeam() const { return m_eOccupyTeam; }
 
     st_Pos GetRegionInsidePos();
     st_Pos GetRandomRegionDoor();
     st_Pos GetRegionDoor(eDirection eDir);
 
-	int GetOccupyTeamCount() { return m_iOccupyTeamCount; }
-	int GetOppositeCount() { return m_iOppositeCount; }
+	int GetOccupyTeamCount() const { return m_iOccupyTeamCount; }
+	int GetOppositeCount() const { return m_iOppositeCount; }
 public:
     void EnterRegion(eTeam team, CEntity* pObj);           // 지역 들어가기
     void ExitRegion(eTeam team, CEntity* pObj);            // 지역 나가기
-    
+
 
     void DebugFunc_Test(eTeam occupyTeam, eTeam curoccupyingteam, int occupyTeamCount, int oppositeCount, int occupyTimer, int occupyingTime);
 private:
@@ -61,10 +56,10 @@ private:
     void EnterOccupyRegion(eTeam team);     // 점령한 지역
     void OccupyRegion();
 
-    eTeam m_iOccupyTeam;                    // 점령팀
-    eTeam m_iCurOccupyingTeam;              // 점령중인 팀
+    eTeam m_eOccupyTeam;                    // 점령팀
+    eTeam m_eCurOccupyingTeam;              // 점령중인 팀
     int m_iOccupyTeamCount;                 // 점령 중인 팀 명수
-    int m_iOppositeCount;                   // 반대 팀 명수 
+    int m_iOppositeCount;                   // 반대 팀 명수
     int m_iOccupyTimer;                     // 점령에 필요한 시간
     int m_iOccupyingTime;                   // 점령 진행 시간
 };

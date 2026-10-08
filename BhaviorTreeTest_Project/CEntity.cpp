@@ -15,12 +15,12 @@ CEntity::CEntity(eTeam team, int id)
 
 	switch (team)
 	{
-	case eTeam::NONE:
+	case eTeam::None:
 		break;
-	case eTeam::RED:
+	case eTeam::Red:
 		m_hRenderBrush = CreateSolidBrush(RGB(100, 20, 20));
 		break;
-	case eTeam::BLUE:
+	case eTeam::Blue:
 		m_hRenderBrush = CreateSolidBrush(RGB(20, 20, 100));
 		break;
 	}
@@ -33,14 +33,14 @@ CEntity::CEntity(eTeam team, int id)
 void CEntity::Init(st_Pos& spawnpos)
 {
 	SetPos(spawnpos);
-	m_eState = eState::SPAWN;
+	m_eState = eState::Spawn;
 
-	m_Ai.SetTarget(this);
+	m_ai.SetTarget(this);
 }
 
 void CEntity::Update()
 {
-	m_Ai.Update();
+	m_ai.Update();
 }
 
 void CEntity::Render(HDC hdc)
@@ -55,11 +55,9 @@ void CEntity::Render(HDC hdc)
 
 void CEntity::OnSpawn()
 {
-	ChangeState(eState::IDLE);
-	m_Ai.SetMap(g_SimulatorManager->GetMap());
-	m_Ai.SetTarget(this);
-
-	m_iHP = 100;
+	ChangeState(eState::Idle);
+	m_ai.SetMap(g_SimulatorManager->GetMap());
+	m_ai.SetTarget(this);
 }
 
 bool CEntity::GetMoveNextPosInfo(st_PosInfo& posinfo)
@@ -67,11 +65,11 @@ bool CEntity::GetMoveNextPosInfo(st_PosInfo& posinfo)
 	if (m_queueMovePath.empty())
 	{
 		if (!NetMovePath())
-			return eBTresult::FAILD;
+			return eBTresult::Failed;
 	}
 	posinfo = m_queueMovePath.front();
-	
-	return eBTresult::SUCCESS;
+
+	return eBTresult::Success;
 }
 
 void CEntity::InitAstarPathtoMovePath()
@@ -79,12 +77,12 @@ void CEntity::InitAstarPathtoMovePath()
 	st_Pos nodePos = m_vecAstarPath.back();
 	m_vecAstarPath.pop_back();
 
-	m_Ai.GetMap()->BresenhamLine(m_stPos.X, m_stPos.Y, nodePos.X, nodePos.Y, m_queueMovePath);
+	m_ai.GetMap()->BresenhamLine(m_stPos.X, m_stPos.Y, nodePos.X, nodePos.Y, m_queueMovePath);
 }
 
 void CEntity::ChangeState(eState state)
 {
-	m_Ai.m_board.ResetRuntime();
+	m_ai.ResetRuntime();
 
 	m_eState = state;
 }
@@ -92,63 +90,64 @@ void CEntity::ChangeState(eState state)
 bool CEntity::NetMovePath()
 {
 	if (m_vecAstarPath.empty() || !m_queueMovePath.empty())
-		return eBTresult::FAILD;
+		return eBTresult::Failed;
 
 	st_Pos nodePos = m_vecAstarPath.back();
 	m_vecAstarPath.pop_back();
 
-	m_Ai.GetMap()->BresenhamLine(m_stPos.X, m_stPos.Y, nodePos.X, nodePos.Y, m_queueMovePath);
+	m_ai.GetMap()->BresenhamLine(m_stPos.X, m_stPos.Y, nodePos.X, nodePos.Y, m_queueMovePath);
 	if (m_queueMovePath.empty())
-		return eBTresult::FAILD;
+		return eBTresult::Failed;
 
-	return eBTresult::SUCCESS;
+	return eBTresult::Success;
 }
 
 int CEntity::Move()
 {
 	if (m_vecAstarPath.empty() && m_queueMovePath.empty())
-		return eBTresult::SUCCESS;
+		return eBTresult::Success;
 
 	if (m_queueMovePath.empty())
 	{
 		st_Pos nodePos = m_vecAstarPath.back();
 		m_vecAstarPath.pop_back();
 
-		m_Ai.GetMap()->BresenhamLine(m_stPos.X, m_stPos.Y, nodePos.X, nodePos.Y, m_queueMovePath);
+		m_ai.GetMap()->BresenhamLine(m_stPos.X, m_stPos.Y, nodePos.X, nodePos.Y, m_queueMovePath);
 		if (m_queueMovePath.empty())
-			return eBTresult::FAILD;
+			return eBTresult::Failed;
 	}
 
 	st_Pos OldPos = m_stPos;
 
 	SetPos(m_queueMovePath.front().pos);
 
-	int oldRegionIndex = m_Ai.GetMap()->GetRegionIndex(OldPos);
-	m_iCurrentRegionIndex = m_Ai.GetMap()->GetRegionIndex(m_stPos);
+	int oldRegionIndex = m_ai.GetMap()->GetRegionIndex(OldPos);
+	m_iCurrentRegionIndex = m_ai.GetMap()->GetRegionIndex(m_stPos);
 
 	if (oldRegionIndex != m_iCurrentRegionIndex)
 	{
-		CRegion* pOldRegion = m_Ai.GetMap()->GetRegion(oldRegionIndex);
+		CRegion* pOldRegion = m_ai.GetMap()->GetRegion(oldRegionIndex);
 		if (pOldRegion)
 			pOldRegion->ExitRegion(m_eTeam, this);
-		CRegion* pNewRegion = m_Ai.GetMap()->GetRegion(m_iCurrentRegionIndex);
+		CRegion* pNewRegion = m_ai.GetMap()->GetRegion(m_iCurrentRegionIndex);
 		if (pNewRegion)
 		{
 			pNewRegion->EnterRegion(m_eTeam, this);
-			if (pNewRegion->GetOccupyTeam() != m_eTeam && pNewRegion->GetOccupyTeam() != eTeam::NONE)
+			if (pNewRegion->GetOccupyTeam() != m_eTeam && pNewRegion->GetOccupyTeam() != eTeam::None)
 			{
-				m_Ai.m_board.m_pTeam->OnOccupyRegion(m_iCurrentRegionIndex, pNewRegion->GetOccupyTeam());
+				m_ai.GetTeam()->OnOccupyRegion(m_iCurrentRegionIndex, pNewRegion->GetOccupyTeam());
 			}
 		}
-	
+
+        // BT 규칙 검토: 목표나 점령 팀에 관계없이 어느 Region 진입에도 Occupy로 전환한다.
 		if (m_iCurrentRegionIndex != -1)
 		{
-			ChangeState(eState::OCCUPY);
-			m_Ai.m_board.m_iOccupyRegionIndex = m_iCurrentRegionIndex;	
+			ChangeState(eState::Occupy);
+			m_ai.SetOccupyRegionIndex(m_iCurrentRegionIndex);
 		}
 	}
 
 	m_queueMovePath.pop();
 
-	return eBTresult::RUNNING;
+	return eBTresult::Running;
 }

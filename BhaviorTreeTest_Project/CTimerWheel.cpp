@@ -13,7 +13,7 @@ CTimerWheel::CTimerWheel(int tick, int wheelsize)
 	m_iUpdateTick = 0;
 
 	m_vecTimerWheel.resize(wheelsize);
-	QueryPerformanceFrequency(&freq);
+	QueryPerformanceFrequency(&m_frequency);
 }
 
 CTimerWheel::~CTimerWheel()
@@ -40,7 +40,7 @@ void CTimerWheel::Update()
 			}
 			else
 			{
-				(*biter)->Update(freq);
+				(*biter)->Update(m_frequency);
 				m_listCompleteTimeEvent.push_back(*biter);
 			}
 			biter = m_vecTimerWheel[m_iIndex].erase(biter);
@@ -136,7 +136,7 @@ void CTimerWheel::Replace(TWHEEL* data)
 	data->Index = inputIndex;
 }
 
-CTimerWheel CTimerWheel::operator++()
+CTimerWheel& CTimerWheel::operator++()
 {
 	m_iUpdateTick++;
 	if (m_iUpdateTick >= m_iTick)

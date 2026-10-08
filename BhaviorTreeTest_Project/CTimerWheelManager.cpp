@@ -3,11 +3,11 @@
 
 CTimerWheelManager::CTimerWheelManager()
 {
-	QueryPerformanceFrequency(&m_Lfreq);
-	m_LStartTime = { 0 };
+	QueryPerformanceFrequency(&m_frequency);
+	m_startTime = { 0 };
 	m_dRemainTime = 0;
 
-	m_vecTimerWheelSize = 0;
+	m_iTimerWheelCount = 0;
 
 	AddTimerWheel(1, 1000);
 	AddTimerWheel(1000, 60);
@@ -21,15 +21,15 @@ CTimerWheelManager::~CTimerWheelManager()
 void CTimerWheelManager::Update()
 {
 	double ms = 1;
-	if (m_LStartTime.QuadPart != 0)
+	if (m_startTime.QuadPart != 0)
 	{
-		LARGE_INTEGER temp = m_LStartTime;
-		QueryPerformanceCounter(&m_LEndTime);
-		m_LStartTime = m_LEndTime;
-		ms = (double)(m_LEndTime.QuadPart - temp.QuadPart) * 1000 / (double)m_Lfreq.QuadPart;
+		LARGE_INTEGER temp = m_startTime;
+		QueryPerformanceCounter(&m_endTime);
+		m_startTime = m_endTime;
+		ms = (double)(m_endTime.QuadPart - temp.QuadPart) * 1000 / (double)m_frequency.QuadPart;
 	}
 	else
-		QueryPerformanceCounter(&m_LStartTime);
+		QueryPerformanceCounter(&m_startTime);
 
 	ms += m_dRemainTime;
 	int nLoop = static_cast<int>(ms);
@@ -44,7 +44,7 @@ void CTimerWheelManager::Update()
 	for (int i = 0; i < nLoop; i++)
 	{
 		++(*m_vecTimerWheel[0]);
-		for (int j = 1; j < m_vecTimerWheelSize; j++)
+		for (int j = 1; j < m_iTimerWheelCount; j++)
 		{
 			++(*m_vecTimerWheel[j]);
 			biter = m_vecTimerWheel[j]->m_listRemainTimeEvent.begin();
@@ -53,7 +53,7 @@ void CTimerWheelManager::Update()
 				m_vecTimerWheel[j-1]->Replace(*biter);
 			m_vecTimerWheel[j]->m_listRemainTimeEvent.clear();
 		}
-		
+
 	}
 
 	PostProcessing();
@@ -61,7 +61,7 @@ void CTimerWheelManager::Update()
 
 void CTimerWheelManager::Push(TWHEEL* data)
 {
-	for (int i = 0; i < m_vecTimerWheelSize; i++)
+	for (int i = 0; i < m_iTimerWheelCount; i++)
 	{
 		if (data->TotalTimer > m_vecTimerWheel[i]->GetMaxCheckTimer())
 			continue;
@@ -73,7 +73,7 @@ void CTimerWheelManager::Push(TWHEEL* data)
 
 void CTimerWheelManager::RePush(TWHEEL* data)
 {
-	for (int i = 0; i < m_vecTimerWheelSize; i++)
+	for (int i = 0; i < m_iTimerWheelCount; i++)
 	{
 		if (data->TotalTimer > m_vecTimerWheel[i]->GetMaxCheckTimer())
 			continue;
@@ -85,7 +85,7 @@ void CTimerWheelManager::RePush(TWHEEL* data)
 
 void CTimerWheelManager::Pop(TWHEEL* data)
 {
-	for (int i = 0; i < m_vecTimerWheelSize; i++)
+	for (int i = 0; i < m_iTimerWheelCount; i++)
 	{
 		if (data->TotalTimer > m_vecTimerWheel[i]->GetMaxCheckTimer())
 			continue;
@@ -97,8 +97,8 @@ void CTimerWheelManager::Pop(TWHEEL* data)
 bool CTimerWheelManager::Replace(TWHEEL* data, int subTime, bool bAdd)
 {
 	CTimerWheel* pTimerWheel = nullptr;
-	
-	for (int i = 0; i < m_vecTimerWheelSize; i++)
+
+	for (int i = 0; i < m_iTimerWheelCount; i++)
 	{
 		if (data->TotalTimer > m_vecTimerWheel[i]->GetMaxCheckTimer())
 			continue;
@@ -114,7 +114,6 @@ bool CTimerWheelManager::Replace(TWHEEL* data, int subTime, bool bAdd)
 		return false;
 
 	unsigned int RemaindTime = 0;
-	int curTime = GetTickCount();
 	if(bAdd)
 		RemaindTime = data->TotalTimer - (GetTickCount() - data->PushTime) + subTime;
 	else
@@ -125,7 +124,7 @@ bool CTimerWheelManager::Replace(TWHEEL* data, int subTime, bool bAdd)
 		pTimerWheel->m_listCompleteTimeEvent.push_back(data);
 		return false;
 	}
-	
+
 	data->TotalTimer = RemaindTime;
 	RePush(data);
 	return true;
@@ -135,7 +134,7 @@ bool CTimerWheelManager::ChangeTime(TWHEEL* data, int time)
 {
 	CTimerWheel* pTimerWheel = nullptr;
 
-	for (int i = 0; i < m_vecTimerWheelSize; i++)
+	for (int i = 0; i < m_iTimerWheelCount; i++)
 	{
 		if (data->TotalTimer > m_vecTimerWheel[i]->GetMaxCheckTimer())
 			continue;
@@ -151,7 +150,7 @@ bool CTimerWheelManager::ChangeTime(TWHEEL* data, int time)
 		return false;
 
 	unsigned int RemaindTime = time;
-	
+
 	if (RemaindTime <= 0)
 	{
 		pTimerWheel->m_listCompleteTimeEvent.push_back(data);
@@ -169,15 +168,15 @@ void CTimerWheelManager::AddTimerWheel(int tick, int wheelsize)
 
 	m_vecTimerWheel.push_back(pTimerWheel);
 	std::sort(m_vecTimerWheel.begin(), m_vecTimerWheel.end(),
-		[](CTimerWheel* p1, CTimerWheel* p2) 
+		[](CTimerWheel* p1, CTimerWheel* p2)
 		{
 			return p1->GetRoundTick() < p2->GetRoundTick();
-		} 
+		}
 	);
-	m_vecTimerWheelSize++;
+	m_iTimerWheelCount++;
 
-	m_vecTimerWheel[m_vecTimerWheelSize - 1]->SetMaxCheckTimer(m_vecTimerWheel[m_vecTimerWheelSize - 1]->GetRoundTick() * 60);
-	for (int i =0; i < m_vecTimerWheelSize-1; i++)
+	m_vecTimerWheel[m_iTimerWheelCount - 1]->SetMaxCheckTimer(m_vecTimerWheel[m_iTimerWheelCount - 1]->GetRoundTick() * 60);
+	for (int i =0; i < m_iTimerWheelCount-1; i++)
 	{
 		m_vecTimerWheel[i]->SetMaxCheckTimer(m_vecTimerWheel[i + 1]->GetRoundTick());	// 최대 측정 값 지정
 	}
@@ -188,7 +187,7 @@ void CTimerWheelManager::PostProcessing()
 {
 	std::list<TWHEEL*>::iterator biter;
 	std::list<TWHEEL*>::iterator eiter;
-	for (int i = 0; i < m_vecTimerWheelSize; i++)
+	for (int i = 0; i < m_iTimerWheelCount; i++)
 	{
 		biter = m_vecTimerWheel[i]->m_listCompleteTimeEvent.begin();
 		eiter = m_vecTimerWheel[i]->m_listCompleteTimeEvent.end();
