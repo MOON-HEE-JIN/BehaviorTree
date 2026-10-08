@@ -4,16 +4,19 @@
 
 class CEntity;
 class CMap;
+class CTeam;
 
 class CAIEntity : public CAIController
 {
 public:
-
-public:
 	void Update();
 
-	void SetTarget(CEntity* pTarget) { m_board.m_pEntity = pTarget; }
-	void SetMap(CMap* pMap) { m_board.m_pMap = pMap; }
+	void SetTeam(CTeam* pTeam) { m_blackBoard.m_pTeam = pTeam; }
+	void SetTarget(CEntity* pTarget) { m_blackBoard.m_pEntity = pTarget; }
+	void SetMap(CMap* pMap) { m_blackBoard.m_pMap = pMap; }
 
-	CMap* GetMap() { return m_board.m_pMap; }
+	CMap* GetMap() const { return m_blackBoard.m_pMap; }
+    CTeam* GetTeam() const { return m_blackBoard.m_pTeam; }
+    void ResetRuntime() { m_blackBoard.ResetRuntime(); }
+    void SetOccupyRegionIndex(int index) { m_blackBoard.m_iOccupyRegionIndex = index; }
 };

@@ -14,25 +14,25 @@ public:
 	~CSimulatorManager();
 
 private:
-	CMap* m_cMap;
+	CMap* m_pMap;
 	std::vector<WinObject*> m_vecRenderObject;
 	std::vector<CTeam*> m_vecTeam;
 	std::vector<CEntity*> m_vecEntity;
 
-	CTimerWheelManager m_cUpdateTimerWheel;
+	CTimerWheelManager m_updateTimerWheel;
 
 	int m_iEntityId;
 public:
 	void NewUpdatePushTimerWheel(TWHEEL* pTweel);
 	// WinObject을(를) 통해 상속됨
-	virtual void Update() override;
-	virtual void Render(HDC hdc) override;
+	void Update() override;
+	void Render(HDC hdc) override;
 
 	void CreateMap();
 	void CreateEntity(eTeam team, int count);
 
 	CTeam* GetTeam(eTeam team);
-	CMap* GetMap() { return m_cMap; }
+	CMap* GetMap() const { return m_pMap; }
 	CEntity* GetEntity(int id);
 };
 

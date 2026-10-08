@@ -1,16 +1,13 @@
 ﻿#pragma once
 #include "WinObject.h"
 
-class CBaseObject :
-    public WinObject
+class CBaseObject : public WinObject
 {
+protected:
+    int m_iID = -1;
+
 public:
-    int m_iID;
-    eTeam m_eTeam;
-    int m_iHP = 100;
-    int m_iCurrentRegionIndex;
-
-    virtual void Init(st_Pos& spawnpos) {};
-    virtual void OnSpawn() {};
+    int GetId() const { return m_iID; }
+    virtual void Init(st_Pos& spawnpos) {}
+    virtual void OnSpawn() {}
 };
-

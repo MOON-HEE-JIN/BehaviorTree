@@ -1,21 +1,40 @@
 ﻿#pragma once
 
-#include <atomic>
+#include "Defines.h"
+#include <unordered_map>
 
 class CEntity;
 class CMap;
-struct st_RumtimeNodeInfo
+class CTeam;
+class CBTNode;
+
+struct st_RuntimeNodeInfo
 {
-	int m_iRet;
-	int m_iCurrentIndex;
+	int m_iCurrentIndex = 0;
 };
 
-class CBlackBoard
+struct st_BlackBoard
 {
-public:
-	CEntity* m_pEntity;
-	CMap* m_pMap;
-	st_RumtimeNodeInfo m_stRuntime;
+	CEntity* m_pEntity = nullptr;
+	CMap* m_pMap = nullptr;
+	CTeam* m_pTeam = nullptr;
 
-	int m_iTargetRegionIndex;
+	std::unordered_map<CBTNode*, st_RuntimeNodeInfo> m_mapRuntime;
+
+	eAstarTargetType m_eAstarTargetType = eAstarTargetType::None;
+	int m_iTargetRegionIndex = -1;
+	int m_iOccupyRegionIndex = -1;
+	st_Pos m_stRegionCenterPos;
+	st_Pos m_stRegionInsidePos;
+
+	st_Pos m_stGoalPos;
+	void ResetRuntime()
+	{
+		m_mapRuntime.clear();
+	}
+
+	void PushRuntime(CBTNode* pNode, const st_RuntimeNodeInfo& info)
+	{
+		m_mapRuntime[pNode] = info;
+	}
 };

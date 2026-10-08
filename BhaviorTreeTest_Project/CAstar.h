@@ -11,21 +11,20 @@
 const int HV = 1;
 //대각선
 const float D = 1.5f;
-const int G_C = 25;
 
 
 namespace GridColor
 {
 	enum Dir
 	{
-		LL,
-		RR,
-		UU,
-		DD,
-		LU,
-		LD,
-		RU,
-		RD
+		Left,
+		Right,
+		Up,
+		Down,
+		LeftUp,
+		LeftDown,
+		RightUp,
+		RightDown
 	};
 }
 
@@ -75,7 +74,7 @@ class CAstarGrid
 {
 public:
 	CAstarGrid();
-	~CAstarGrid();
+	virtual ~CAstarGrid();
 protected:
 	float GetH(int X, int Y);
 
@@ -89,12 +88,11 @@ public:
 private:
 	void SetMapVectorInit();
 protected:
-	int MAP_GRID_WIDTH;
-	int MAP_GRID_HEIGHT;
-	
-	int start_X = 0, start_Y = 0;
-	int End_X = 0, End_Y = 0;
-	int r_X = 0, r_Y = 0;
+	int m_iMapWidth = 0;
+	int m_iMapHeight = 0;
+
+	int m_iStartX = 0, m_iStartY = 0;
+	int m_iEndX = 0, m_iEndY = 0;
 
 	std::vector<std::vector<MAP_STAT_NODE>> m_vecMapStat;
 };
@@ -105,10 +103,10 @@ class CAstar : public CAstarGrid
 public :
 	CAstar();
 	CAstar(int _width, int _height, int _grid);
-	~CAstar();
+	~CAstar() override;
 
-	bool FindPath(int start_X, int start_Y, int End_X, int End_Y, std::vector<st_Pos>& vec);
-	
+	bool FindPath(int m_iStartX, int m_iStartY, int m_iEndX, int m_iEndY, std::vector<st_Pos>& vec);
+
 	bool isStraight(int x1, int y1, int x2, int y2);
 private:
 	void listSort();

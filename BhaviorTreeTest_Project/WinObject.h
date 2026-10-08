@@ -13,13 +13,14 @@ private:
 	int m_iRenderPrivateSize = 0;
 	int m_iRenderPrivateHalfSize = 0;
 
-	bool m_bEnable;
+	bool m_bEnable = true;
 protected:
 	st_Pos m_stPos;
 	st_Pos m_stRenderPos;
 
-	HBRUSH m_hRenderBrush;
+	HBRUSH m_hRenderBrush = nullptr;
 public:
+	virtual ~WinObject() = default;
 	virtual void Update() = 0;
 	virtual void CheckCoolTime(int type) {};
 	virtual void CheckDuringTime(int type) {};
@@ -30,21 +31,21 @@ public:
 	void SetUpdateTime(int time) { m_iUpdateTime = time; }
 	void SetRenderPrivateSize(int size) { m_iRenderPrivateSize = size; m_iRenderPrivateHalfSize = static_cast<int>(m_iRenderPrivateSize * 0.5f); }
 	void SetEnable(bool enable) { m_bEnable = enable; }
-	void SetPos(st_Pos& pos) { 
-		m_stPos = pos; 
+	void SetPos(const st_Pos& pos) {
+		m_stPos = pos;
 		m_stRenderPos.X = m_stPos.X * m_iRenderSize;
 		m_stRenderPos.Y = m_stPos.Y * m_iRenderSize;
 	}
 
-	int GetUpdateTime() { return m_iUpdateTime; }
-	
-	int GetRenderSize() { return m_iRenderSize; }
-	int GetRenderHalfSize() { return m_iRenderHalfSize; }
+	int GetUpdateTime() const { return m_iUpdateTime; }
 
-	int GetRenderPrivateSize() { return m_iRenderPrivateSize; }
-	int GetRenderPrivateHalfSize() { return m_iRenderPrivateHalfSize; }
+	int GetRenderSize() const { return m_iRenderSize; }
+	int GetRenderHalfSize() const { return m_iRenderHalfSize; }
 
-	bool GetEnable() { return m_bEnable; }
-	st_Pos GetPos() { return m_stPos; }
+	int GetRenderPrivateSize() const { return m_iRenderPrivateSize; }
+	int GetRenderPrivateHalfSize() const { return m_iRenderPrivateHalfSize; }
+
+	bool GetEnable() const { return m_bEnable; }
+	st_Pos GetPos() const { return m_stPos; }
 
 };

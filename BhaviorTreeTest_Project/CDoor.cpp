@@ -3,7 +3,7 @@
 
 CDoor::CDoor()
 {
-    this->type = eSTAT_TYPE::DOOR;
+    m_eType = eSTAT_TYPE::Door;
     m_bOpen = false;
 
     m_hOpenBrush = CreateSolidBrush(RGB(37, 37, 38));

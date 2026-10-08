@@ -8,9 +8,9 @@ public:
 	CBehaviorManager();
 
 public:
-	CBehaviorTree* GetIdleTree() { return &m_IdleTree; }
-	CBehaviorTree* GetCombatTree() { return &m_CombatTree; }
-	CBehaviorTree* GetOccupyTree() { return &m_OccupyTree; }
+	CBehaviorTree* GetIdleTree() { return &m_idleTree; }
+	CBehaviorTree* GetCombatTree() { return &m_combatTree; }
+	CBehaviorTree* GetOccupyTree() { return &m_occupyTree; }
 
 private:
 	void CreateEntityIdleTree();
@@ -18,9 +18,12 @@ private:
 	void CreateEntityOccupyTree();
 
 private:
-	CBehaviorTree m_IdleTree;
-	CBehaviorTree m_CombatTree;
-	CBehaviorTree m_OccupyTree;
+	CBehaviorTree m_idleTree;
+	CBehaviorTree m_combatTree;
+	CBehaviorTree m_occupyTree;
+
+private:
+	CBT_MoveSelector* CreateMoveSelector();
 };
 
 extern CBehaviorManager g_CBehaviorManager;

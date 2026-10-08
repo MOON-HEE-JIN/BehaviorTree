@@ -6,27 +6,28 @@
 
 void CAIEntity::Update()
 {
-	switch (m_board.m_pEntity->GetState())
+	switch (m_blackBoard.m_pEntity->GetState())
 	{
-	case eState::SPAWN:
+	case eState::Spawn:
 	{
-		CTeam* pTeam = g_SimulatorManager->GetTeam(m_board.m_pEntity->GetTeam());
-		
+		CTeam* pTeam = g_SimulatorManager->GetTeam(m_blackBoard.m_pEntity->GetTeam());
+
 		if (pTeam == nullptr)
 			break;
 
 		pTeam->AddMember();
-		
-		m_board.m_pEntity->OnSpawn();
-		printf("%s Add Entity \n", pTeam->GetTeam() == eTeam::RED ? "Red" : "Blue");
+
+		m_blackBoard.m_pEntity->OnSpawn();
+		printf("%s Add Entity \n", pTeam->GetTeam() == eTeam::Red ? "Red" : "Blue");
 	}
 		break;
-	case eState::IDLE:
-		g_CBehaviorManager.GetIdleTree()->Run(&m_board);
+	case eState::Idle:
+		g_CBehaviorManager.GetIdleTree()->Run(&m_blackBoard);
 		break;
-	case eState::COMBAT:
+	case eState::Combat:
 		break;
-	case eState::OCCUPY:
+	case eState::Occupy:
+		g_CBehaviorManager.GetOccupyTree()->Run(&m_blackBoard);
 		break;
 	}
 }

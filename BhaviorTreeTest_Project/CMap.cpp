@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <algorithm>
+#include <climits>
 
 #include "CDoor.h"
 
@@ -16,12 +17,12 @@ HPEN g_BlackPen;
 
 CMap::CMap()
 {
-	m_cAstar.SetMapInit(MAP_SIZE_WH, MAP_SIZE_WH);
+	m_astar.SetMapInit(MAP_SIZE_WH, MAP_SIZE_WH);
 	g_BlackPen = (HPEN)CreatePen(BS_SOLID, 1, RGB(0, 0, 0));
-	
+
 	std::ifstream fp("SimulatorMap.txt");
 	if (!fp.is_open())
-		printf("FAILD OPEN MAP\n");
+		printf("Failed OPEN MAP\n");
 
 	std::string line;
 
@@ -37,19 +38,19 @@ CMap::CMap()
 			m_vecMapStat[y][x].iType = atoi(token.c_str());
 			int iType = m_vecMapStat[y][x].iType;
 
-			if (iType == eSTAT_TYPE::WALL)
+			if (iType == eSTAT_TYPE::Wall)
 			{
-				m_vecMapStat[y][x].bIsMove = false;	
-				m_cAstar.SetWall(x, y);
+				m_vecMapStat[y][x].bIsMove = false;
+				m_astar.SetWall(x, y);
 			}
 			else
 				m_vecMapStat[y][x].bIsMove = true;
 
-			if (iType == eSTAT_TYPE::WALL || iType == eSTAT_TYPE::DOOR)
+			if (iType == eSTAT_TYPE::Wall || iType == eSTAT_TYPE::Door)
 				m_vecMapStat[y][x].bIsBuildWall = true;
 			else
 				m_vecMapStat[y][x].bIsBuildWall = false;
-		
+
 			m_vecMapStat[y][x].iRegionIndex = -1; // 초기값
 		}
 	}
@@ -74,7 +75,6 @@ CMap::~CMap()
 
 void CMap::Update()
 {
-	UpdateVisiableEntity();
 }
 
 void CMap::Render(HDC hdc)
@@ -93,18 +93,18 @@ void CMap::RenderGrid(HDC hdc)
 	for (int i = 0; i < MAP_SIZE_WH; i ++)
 	{
 		MoveToEx(hdc, x, 0, NULL);
-		LineTo(hdc, x, MAP_SIZE_WH * m_GridRenderSize);
-		x += m_GridRenderSize;
+		LineTo(hdc, x, MAP_SIZE_WH * m_iGridRenderSize);
+		x += m_iGridRenderSize;
 
 		MoveToEx(hdc, 0, y, NULL);
-		LineTo(hdc, MAP_SIZE_WH * m_GridRenderSize, y);
-		y += m_GridRenderSize;
+		LineTo(hdc, MAP_SIZE_WH * m_iGridRenderSize, y);
+		y += m_iGridRenderSize;
 	}
 }
 
 CRegion* CMap::GetRegion(int index)
 {
-	if (index < 0 || index > m_vecRegion.size())
+	if (index < 0 || index >= static_cast<int>(m_vecRegion.size()))
 		return nullptr;
 
 	return m_vecRegion[index];
@@ -112,7 +112,7 @@ CRegion* CMap::GetRegion(int index)
 
 st_Pos CMap::GetSpawnPos(int index)
 {
-	if (2 < index)
+	if (index < 0 || 2 < index)
 		return m_stSpawnPoint[0];
 
 	return m_stSpawnPoint[index];
@@ -120,28 +120,56 @@ st_Pos CMap::GetSpawnPos(int index)
 
 int CMap::GetNearRegionIndex(st_Pos pos)
 {
+    int bestIndex = -1;
+    long long bestDistance = LLONG_MAX;
+    for (CRegion* pRegion : m_vecRegion)
+    {
+        const st_Pos center = pRegion->GetPos();
+        const long long dx = static_cast<long long>(pos.X) - center.X;
+        const long long dy = static_cast<long long>(pos.Y) - center.Y;
+        const long long distance = dx * dx + dy * dy;
+        if (distance < bestDistance)
+        {
+            bestDistance = distance;
+            bestIndex = pRegion->GetRegionIndex();
+        }
+    }
+    return bestIndex;
+}
+
+int CMap::GetEmptyRegion(const std::vector<int>& vec, st_Pos pos)
+{
 	int min = 99999;
-	int ret = 0;
-	for (int i = 0; i < m_iMaxRegionCount; i++)
+	int ret = -1;
+	for (int i = 0; i < vec.size(); i++)
 	{
-		int length = pos.Length(m_vecRegion[i]->GetPos());
+		int index = vec[i];
+		int length = pos.LengthLength(m_vecRegion[index]->GetPos());
 		if (min > length)
 		{
 			min = length;
-			ret = i;
+			ret = index;
 		}
 	}
+
 	return ret;
 }
 
 CPartsBase* CMap::GetPart(st_Pos pos)
 {
 	__int64 key = ((__int64)pos.Y << 32 | pos.X);
-	
-	if (m_mapParts.find(key) == m_mapParts.end())
-		return nullptr;
 
-	return m_mapParts[key];
+    const auto it = m_mapParts.find(key);
+    return it != m_mapParts.end() ? it->second : nullptr;
+}
+
+int CMap::GetRegionOppositeCount(int regionindex)
+{
+	CRegion* pRegion = GetRegion(regionindex);
+	if (pRegion == nullptr)
+		return 0;
+
+	return pRegion->GetOppositeCount();
 }
 
 bool CMap::FindShape(int sX, int sY, st_Rect& region, std::vector<st_Part>& vecParts)
@@ -150,14 +178,14 @@ bool CMap::FindShape(int sX, int sY, st_Rect& region, std::vector<st_Part>& vecP
 	int iX = sX;
 	for (; iX < MAP_SIZE_WH; iX++)
 	{
-		if (m_vecMapStat[sY][iX].iType == eSTAT_TYPE::DOOR)
+		if (m_vecMapStat[sY][iX].iType == eSTAT_TYPE::Door)
 		{
 			st_Part part;
-			CreateDoor(part, eDirection::NORTH, st_Pos{ iX, sY });
+			CreateDoor(part, eDirection::North, st_Pos{ iX, sY });
 			vecParts.push_back(part);
 		}
 		//┐  찾기
-		if (m_vecMapStat[sY][iX].iType == eSTAT_TYPE::NONE &&
+		if (m_vecMapStat[sY][iX].iType == eSTAT_TYPE::None &&
 			m_vecMapStat[sY][iX - 1].bIsBuildWall == true)
 		{
 			break;
@@ -175,25 +203,25 @@ bool CMap::FindShape(int sX, int sY, st_Rect& region, std::vector<st_Part>& vecP
 
 	if (!bSearch)
 		return false;
-	
+
 	bSearch = false;
 	int iY = sY;
 	for (; iY < MAP_SIZE_WH; iY++)
 	{
-		if (m_vecMapStat[iY][iX].iType == eSTAT_TYPE::DOOR)
+		if (m_vecMapStat[iY][iX].iType == eSTAT_TYPE::Door)
 		{
 			st_Part part;
-			CreateDoor(part, eDirection::EAST, st_Pos{ iX, iY });
+			CreateDoor(part, eDirection::East, st_Pos{ iX, iY });
 			vecParts.push_back(part);
 		}
 		// ┘ 찾기
-		if (m_vecMapStat[iY][iX].iType == eSTAT_TYPE::NONE &&
+		if (m_vecMapStat[iY][iX].iType == eSTAT_TYPE::None &&
 			m_vecMapStat[iY - 1][iX].bIsBuildWall == true)
 		{
 			break;
 		}
 	}
-	
+
 	iY--;
 	if (
 		m_vecMapStat[iY][iX].bIsBuildWall == true &&
@@ -211,14 +239,14 @@ bool CMap::FindShape(int sX, int sY, st_Rect& region, std::vector<st_Part>& vecP
 
 	for (; iX >= 0; iX--)
 	{
-		if (m_vecMapStat[iY][iX].iType == eSTAT_TYPE::DOOR)
+		if (m_vecMapStat[iY][iX].iType == eSTAT_TYPE::Door)
 		{
 			st_Part part;
-			CreateDoor(part, eDirection::SOUTH, st_Pos{iX, iY });
+			CreateDoor(part, eDirection::South, st_Pos{iX, iY });
 			vecParts.push_back(part);
 		}
 		// └ 찾기
-		if (m_vecMapStat[iY][iX].iType == eSTAT_TYPE::NONE &&
+		if (m_vecMapStat[iY][iX].iType == eSTAT_TYPE::None &&
 			m_vecMapStat[iY][iX + 1].bIsBuildWall == true)
 		{
 			break;
@@ -236,17 +264,17 @@ bool CMap::FindShape(int sX, int sY, st_Rect& region, std::vector<st_Part>& vecP
 
 	if (!bSearch)
 		return false;
-	
+
 	for (; iY >= 0; iY--)
 	{
-		if (m_vecMapStat[iY][iX].iType == eSTAT_TYPE::DOOR)
+		if (m_vecMapStat[iY][iX].iType == eSTAT_TYPE::Door)
 		{
 			st_Part part;
-			CreateDoor(part, eDirection::WEST, st_Pos{ iX, iY });
+			CreateDoor(part, eDirection::West, st_Pos{ iX, iY });
 			vecParts.push_back(part);
 		}
 		// └ 찾기
-		if (m_vecMapStat[iY][iX].iType == eSTAT_TYPE::NONE)
+		if (m_vecMapStat[iY][iX].iType == eSTAT_TYPE::None)
 		{
 			break;
 		}
@@ -258,7 +286,8 @@ bool CMap::FindShape(int sX, int sY, st_Rect& region, std::vector<st_Part>& vecP
 bool CMap::SearchRegion()
 {
 	int index = 0;
-	for (int iY = 1; iY < MAP_SIZE_WH; iY++)
+	// Corner detection reads the next row, so the last row cannot be a candidate.
+	for (int iY = 1; iY < MAP_SIZE_WH - 1; iY++)
 	{
 		for (int iX = 0; iX < MAP_SIZE_WH-1; iX++)
 		{
@@ -276,7 +305,7 @@ bool CMap::SearchRegion()
 				if (ret)
 				{
 					st_Rect _rect(region.Left, region.Top, region.Right, region.Bottom);
-					CRegion* pRegion = new CRegion(_rect, m_GridRenderSize, index);
+					CRegion* pRegion = new CRegion(_rect, m_iGridRenderSize, index);
 					m_vecRegion.push_back(pRegion);
 					AddPart(vecParts, index);
 
@@ -288,7 +317,7 @@ bool CMap::SearchRegion()
 						}
 					}
 
-					m_iMaxRegionCount = ++index;
+					++index;
 					printf("Find Region Area Size %d * %d = %d\n", _rect.Width, _rect.Height, _rect.Width * _rect.Height);
 				}
 			}
@@ -296,14 +325,14 @@ bool CMap::SearchRegion()
 	}
 
 #ifdef DEBUG_DUMMY_DATA
-	m_vecRegion[0]->DebugFunc_Test(eTeam::RED, eTeam::NONE,0,0,0,0);	//RED 점령
-	m_vecRegion[1]->DebugFunc_Test(eTeam::BLUE, eTeam::NONE,0,0,0,0);	//BLUE 점령
+	m_vecRegion[0]->DebugFunc_Test(eTeam::Red, eTeam::None,0,0,0,0);	//Red 점령
+	m_vecRegion[1]->DebugFunc_Test(eTeam::Blue, eTeam::None,0,0,0,0);	//Blue 점령
 
-	m_vecRegion[2]->DebugFunc_Test(eTeam::NONE, eTeam::RED, 2, 1, 0, 0);	// 비 점령 구역 레드 차지중
-	m_vecRegion[3]->DebugFunc_Test(eTeam::NONE, eTeam::BLUE, 2, 1, 0, 0);	// 비 점령 구역 블루 차지중
+	m_vecRegion[2]->DebugFunc_Test(eTeam::None, eTeam::Red, 2, 1, 0, 0);	// 비 점령 구역 레드 차지중
+	m_vecRegion[3]->DebugFunc_Test(eTeam::None, eTeam::Blue, 2, 1, 0, 0);	// 비 점령 구역 블루 차지중
 
-	m_vecRegion[4]->DebugFunc_Test(eTeam::RED, eTeam::BLUE, 3, 2, 0, 0); // RED 점령 BLUE 뺐는중
-	m_vecRegion[5]->DebugFunc_Test(eTeam::BLUE, eTeam::RED, 2, 3, 0, 0); // BLUE 점령 RED 뺐는중 Blue 인원 더 많음
+	m_vecRegion[4]->DebugFunc_Test(eTeam::Red, eTeam::Blue, 3, 2, 0, 0); // Red 점령 Blue 뺐는중
+	m_vecRegion[5]->DebugFunc_Test(eTeam::Blue, eTeam::Red, 2, 3, 0, 0); // Blue 점령 Red 뺐는중 Blue 인원 더 많음
 #endif // DEBUG_DUMMY_DATA
 
 	return true;
@@ -318,59 +347,41 @@ void CMap::AddPart(std::vector<st_Part>& vec, int regionindex)
 		CPartsBase* pPart = nullptr;
 		switch (type)
 		{
-		case eSTAT_TYPE::DOOR:
+		case eSTAT_TYPE::Door:
 		{
 			pPart = new CDoor();
 			pPart->SetPos(vec[i].pos);
-			((CDoor*)pPart)->SetOwnerRegion(regionindex);
 
 			__int64 key = ((__int64)vec[i].pos.Y << 32 | vec[i].pos.X);
 			m_mapParts.insert(std::make_pair(key, pPart));
-			
+
 			m_vecRegion[regionindex]->AddParts(pPart);
 		}
 		break;
 		default:
 			break;
 		}
-		
+
 	}
 }
 
-void CMap::UpdateVisiableEntity()
-{
-	// 이러면 n^2 인가? ㄷㄷ
-	// 다른 대안이 있는가?
-	/*
-	for (int i = 0; i < m_iMaxEntityCount; i++)
-	{
-		if (m_vecEntity[i]->m_bEnable == false)
-			continue;
-		st_Pos myPos = m_vecEntity[i]->m_stPos;
-		int visabledist = m_vecEntity[i]->m_iVisableRangeSquare;
-		m_vecEntity[i]->dt->listVisiableTarget.clear();
-		bool bPursuit = false;
-		for (int j = 0; j < m_iMaxEntityCount; j++)
-		{
-			if (m_vecEntity[i] == m_vecEntity[j] || m_vecEntity[j]->m_bEnable == false || m_vecEntity[i]->m_eTeam == m_vecEntity[j]->m_eTeam)
-				continue;
 
-			st_Pos pos = m_vecEntity[j]->m_stPos;
-			int Dx = myPos.X - pos.X;int Dy = myPos.Y - pos.Y;
-			int Dist = Dx * Dx + Dy * Dy;
-			if (visabledist >= Dist)
-			{
-				m_vecEntity[i]->dt->listVisiableTarget.push_back(m_vecEntity[j]);
-				bPursuit = true;
-			}
+
+bool CMap::AllRegionOccupy()
+{
+	for (CRegion* pRegion : m_vecRegion)
+	{
+		if (pRegion->GetOccupyTeam() == eTeam::None)
+		{
+			return false;
 		}
 	}
-	*/
+	return true;
 }
 
 void CMap::CreateDoor(st_Part& out, eDirection dir, st_Pos pos)
 {
-	out.type = eSTAT_TYPE::DOOR;
+	out.type = eSTAT_TYPE::Door;
 	out.Dir = dir;
 	out.pos = pos;
 }
@@ -393,12 +404,12 @@ bool CMap::BresenhamLine(int sX, int sY, int eX, int eY)
 		if (CX == eX && CY == eY) break;
 
 		int BresenhamValue2 = 2 * BresenhamValue;
-		if (BresenhamValue2 > -Dy) // x변화량이 크다는것을 의미 
+		if (BresenhamValue2 > -Dy) // x변화량이 크다는것을 의미
 		{
 			BresenhamValue -= Dy;
 			CX += Mx;
 		}
-		if (BresenhamValue2 < Dx) // y변화량이 크다는것을 의미 
+		if (BresenhamValue2 < Dx) // y변화량이 크다는것을 의미
 		{
 			BresenhamValue += Dx;
 			CY += My;
@@ -420,7 +431,7 @@ void CMap::BresenhamLine(int sX, int sY, int eX, int eY, std::queue<st_PosInfo>&
 	int My = eY > sY ? 1 : -1;  // y 이동량
 
 	int BresenhamValue = Dx - Dy;
-	
+
 	while(!out.empty())
 	{
 		out.pop();
@@ -432,12 +443,12 @@ void CMap::BresenhamLine(int sX, int sY, int eX, int eY, std::queue<st_PosInfo>&
 		if (CX == eX && CY == eY) break;
 
 		int BresenhamValue2 = 2 * BresenhamValue;
-		if (BresenhamValue2 > -Dy) // x변화량이 크다는것을 의미 
+		if (BresenhamValue2 > -Dy) // x변화량이 크다는것을 의미
 		{
 			BresenhamValue -= Dy;
 			CX += Mx;
 		}
-		if (BresenhamValue2 < Dx) // y변화량이 크다는것을 의미 
+		if (BresenhamValue2 < Dx) // y변화량이 크다는것을 의미
 		{
 			BresenhamValue += Dx;
 			CY += My;
@@ -448,9 +459,10 @@ void CMap::BresenhamLine(int sX, int sY, int eX, int eY, std::queue<st_PosInfo>&
 		__int64 checkkey = ((__int64)CY << 32 | CX);
 		int type = 0;
 
-		if (m_mapParts.find(checkkey) != m_mapParts.end())
-		{
-			CPartsBase* pPart = m_mapParts[checkkey];
+        const auto it = m_mapParts.find(checkkey);
+        if (it != m_mapParts.end())
+        {
+            CPartsBase* pPart = it->second;
 			type = pPart->GetType();
 		}
 
@@ -461,27 +473,7 @@ void CMap::BresenhamLine(int sX, int sY, int eX, int eY, std::queue<st_PosInfo>&
 
 bool CMap::OnCollision(CEntity* pOwner, st_Pos pos, int Damage)
 {
-	if (m_vecMapStat[pos.Y][pos.X].iType == eSTAT_TYPE::WALL)
+	if (m_vecMapStat[pos.Y][pos.X].iType == eSTAT_TYPE::Wall)
 		return true;
-	/*
-	for (int i = 0; i < m_iMaxEntityCount; i++)
-	{
-		CEntity* pEntity = m_vecEntity[i];
-		if (!pEntity->m_bEnable)
-			continue;
-		if (pEntity->m_eTeam == pOwner->m_eTeam)
-			continue;
-
-		if (pos == pEntity->m_stPos)
-		{
-			if (pOwner->m_iHP <= 0)
-				return false;
-
-			pEntity->OnDamage(Damage);
-			pEntity->SetTargeting(pOwner);
-			return true;
-		}
-	}
-	*/
 	return false;
 }

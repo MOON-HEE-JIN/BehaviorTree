@@ -22,26 +22,27 @@ private:
 
 	void Update();
 
-	LARGE_INTEGER freq;
+	LARGE_INTEGER m_frequency;
 
-public:
+	friend class CTimerWheelManager;
 	std::list<TWHEEL*> m_listRemainTimeEvent;			// 더 놀아야할 시간이 있는 리스트
 	std::list<TWHEEL*> m_listCompleteTimeEvent;			// 처리가 완료된 리스트
+public:
 	void UpdateTick();
 
-	int GetTick() { return m_iTick; }
-	int GetWheelSize() { return m_iWheelSize; }
-	int GetRoundTick() { return m_iTick * m_iWheelSize; }
-	int GetNowIndex() { return m_iIndex; }
+	int GetTick() const { return m_iTick; }
+	int GetWheelSize() const { return m_iWheelSize; }
+	int GetRoundTick() const { return m_iTick * m_iWheelSize; }
+	int GetNowIndex() const { return m_iIndex; }
 
 	void SetMaxCheckTimer(int MaxTime) { m_iMaxCheckTimer = MaxTime; }
-	int GetMaxCheckTimer() { return m_iMaxCheckTimer; }
+	int GetMaxCheckTimer() const { return m_iMaxCheckTimer; }
 
 	void Push(TWHEEL* data);
 	void RePush(TWHEEL* data);
 	bool Pop(TWHEEL* data);
 	void Replace(TWHEEL* data);
 
-	CTimerWheel operator++();
+	CTimerWheel& operator++();
 };
 
