@@ -136,6 +136,7 @@ void CRegion::OccupyRegion()
 {
 	m_iOccupyTeam = m_iCurOccupyingTeam;
 	printf("Occupy Region[%d] eTeam %s\n", m_iIndex, m_iOccupyTeam == eTeam::RED ? "Red" : "Blue"); 
+	m_iOccupyingTime = 0;
 }
 
 void CRegion::UpdateOccupyTime()
@@ -146,7 +147,7 @@ void CRegion::UpdateOccupyTime()
 	if (m_iCurOccupyingTeam == eTeam::NONE)
 		return;
 	
-	m_iOccupyingTime += 1000;
+	m_iOccupyingTime += 3000;
 
 	m_iProgress = (float)m_iOccupyingTime / m_iOccupyTimer;
 
@@ -194,13 +195,4 @@ void CRegion::EnterOccupyRegion(eTeam team)
 		m_iCurOccupyingTeam = team;
 		m_iOccupyTeamCount++;
 	}
-}
-
-void CRegion::ChangeOccupyTeam()
-{
-	m_iCurOccupyingTeam = m_iCurOccupyingTeam == eTeam::RED ? eTeam::BLUE : eTeam::RED;
-
-	m_iOccupyTeamCount = m_iOppositeCount;
-	m_iOppositeCount = 0;
-	m_iOccupyingTime = 0;
 }

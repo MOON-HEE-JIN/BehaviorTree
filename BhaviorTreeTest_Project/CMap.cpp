@@ -395,6 +395,18 @@ void CMap::UpdateVisiableEntity()
 	*/
 }
 
+bool CMap::AllRegionOccupy()
+{
+	for (CRegion* pRegion : m_vecRegion)
+	{
+		if (pRegion->GetOccupyTeam() == eTeam::NONE)
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
 void CMap::CreateDoor(st_Part& out, eDirection dir, st_Pos pos)
 {
 	out.type = eSTAT_TYPE::DOOR;

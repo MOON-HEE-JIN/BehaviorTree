@@ -61,8 +61,6 @@ private:
     void EnterOccupyRegion(eTeam team);     // 점령한 지역
     void OccupyRegion();
 
-    void ChangeOccupyTeam();
-
     eTeam m_iOccupyTeam;                    // 점령팀
     eTeam m_iCurOccupyingTeam;              // 점령중인 팀
     int m_iOccupyTeamCount;                 // 점령 중인 팀 명수

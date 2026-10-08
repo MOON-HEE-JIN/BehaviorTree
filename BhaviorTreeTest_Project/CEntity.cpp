@@ -27,7 +27,7 @@ CEntity::CEntity(eTeam team, int id)
 
 	SetRenderPrivateSize(8);
 
-	SetUpdateTime(500);
+	SetUpdateTime(250);
 }
 
 void CEntity::Init(st_Pos& spawnpos)
@@ -133,7 +133,13 @@ int CEntity::Move()
 			pOldRegion->ExitRegion(m_eTeam, this);
 		CRegion* pNewRegion = m_Ai.GetMap()->GetRegion(m_iCurrentRegionIndex);
 		if (pNewRegion)
+		{
 			pNewRegion->EnterRegion(m_eTeam, this);
+			if (pNewRegion->GetOccupyTeam() != m_eTeam && pNewRegion->GetOccupyTeam() != eTeam::NONE)
+			{
+				m_Ai.m_board.m_pTeam->OnOccupyRegion(m_iCurrentRegionIndex, pNewRegion->GetOccupyTeam());
+			}
+		}
 	
 		if (m_iCurrentRegionIndex != -1)
 		{

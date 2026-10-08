@@ -41,6 +41,7 @@ public:
 	bool BresenhamLine(int sX, int sY, int eX, int eY);	// 두 위치가 이어지는가?
 	void BresenhamLine(int sX, int sY, int eX, int eY, std::queue<st_PosInfo>& out);
 	bool OnCollision(CEntity* pOwner, st_Pos pos, int Damage);
+	bool AllRegionOccupy();
 
 	const std::vector<CRegion*>& GetRegionVector() { return m_vecRegion; }
 	CRegion* GetRegion(int index);
@@ -59,6 +60,6 @@ private:
 	
 	void AddPart(std::vector<st_Part>& vec, int regionindex);
 	void UpdateVisiableEntity();	// Object 가 볼수있는 Object
-	
+
 	void CreateDoor(st_Part& out, eDirection dir, st_Pos pos);
 };

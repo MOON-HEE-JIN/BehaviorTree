@@ -73,6 +73,11 @@ void CSimulatorManager::Update()
 	}
 
 	m_cUpdateTimerWheel.m_vecCompleteData.clear();
+
+	if (m_cMap->AllRegionOccupy())
+	{
+		printf("\n=== End Simulator ===\n");
+	}
 }
 
 void CSimulatorManager::Render(HDC hdc)
