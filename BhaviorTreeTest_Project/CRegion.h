@@ -43,20 +43,23 @@ public:
     st_Pos GetRegionInsidePos();
     st_Pos GetRandomRegionDoor();
     st_Pos GetRegionDoor(eDirection eDir);
+
+	int GetOccupyTeamCount() { return m_iOccupyTeamCount; }
+	int GetOppositeCount() { return m_iOppositeCount; }
 public:
     void EnterRegion(eTeam team, CEntity* pObj);           // 지역 들어가기
     void ExitRegion(eTeam team, CEntity* pObj);            // 지역 나가기
-    void OccupyRegion();
+    
 
     void DebugFunc_Test(eTeam occupyTeam, eTeam curoccupyingteam, int occupyTeamCount, int oppositeCount, int occupyTimer, int occupyingTime);
 private:
     void UpdateOccupyTime();                // 점령 진행 시간 갱신
     void UpdateInRegion();                  // 안에 있는지 확인
 
-
     void EnterNoneRegion(eTeam team);       // 빈 지역
     void EnterOccupyingRegion(eTeam team);  // 점령중인 지역
     void EnterOccupyRegion(eTeam team);     // 점령한 지역
+    void OccupyRegion();
 
     void ChangeOccupyTeam();
 

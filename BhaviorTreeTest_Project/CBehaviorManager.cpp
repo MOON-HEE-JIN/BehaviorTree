@@ -6,6 +6,7 @@ CBehaviorManager::CBehaviorManager()
 {
 	InitNodeTrees();
 	CreateEntityIdleTree();
+	CreateEntityOccupyTree();
 }
 
 void CBehaviorManager::CreateEntityIdleTree()
@@ -30,7 +31,30 @@ void CBehaviorManager::CreateEntityIdleTree()
 
 void CBehaviorManager::CreateEntityOccupyTree()
 {
+	m_OccupyTree;
 
+	CBT_ConditionBranch* pBranchRoot = new CBT_ConditionBranch();
+	m_OccupyTree.SetRoot(pBranchRoot);
+	
+	CBT_CheckEnemyInRegion* pCheckEnemy = new CBT_CheckEnemyInRegion();
+	pBranchRoot->SetCondition(pCheckEnemy);
+
+	{
+		CBT_Sequence* pSequenceNoEnemy = new CBT_Sequence();
+		CBT_FindOccupyingRegionInPos* pFindOccupyRegion = new CBT_FindOccupyingRegionInPos();
+		CBT_FindPath* pNode = new CBT_FindPath();
+		CBT_Occupy* pOccupy = new CBT_Occupy();
+
+		pSequenceNoEnemy->Push(pFindOccupyRegion);
+		pSequenceNoEnemy->Push(pNode);
+		pSequenceNoEnemy->Push(m_pMoveSelector);
+		pSequenceNoEnemy->Push(pOccupy);
+
+		CBT_Selector* pSelectorEnemy = new CBT_Selector();
+		
+		pBranchRoot->Push(pSequenceNoEnemy);
+		pBranchRoot->Push(pSelectorEnemy);
+	}
 }
 
 void CBehaviorManager::InitNodeTrees()

@@ -37,7 +37,9 @@ public:
     void SetTeam(CTeam* pTeam) { m_Ai.SetTeam(pTeam); }
 
     void InitAstarPathtoMovePath();
-    void ChangeState(eState state) { m_eState = state; }
+    void ChangeState(eState state);
+
+    bool NetMovePath();
     int Move();
 };
 

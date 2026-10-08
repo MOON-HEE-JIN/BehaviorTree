@@ -162,6 +162,15 @@ CPartsBase* CMap::GetPart(st_Pos pos)
 	return m_mapParts[key];
 }
 
+int CMap::GetRegionOppositeCount(int regionindex)
+{
+	CRegion* pRegion = GetRegion(regionindex);
+	if (pRegion == nullptr)
+		return 0;
+
+	return pRegion->GetOppositeCount();
+}
+
 bool CMap::FindShape(int sX, int sY, st_Rect& region, std::vector<st_Part>& vecParts)
 {
 	bool bSearch = false;

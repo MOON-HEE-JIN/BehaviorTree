@@ -27,6 +27,7 @@ void CAIEntity::Update()
 	case eState::COMBAT:
 		break;
 	case eState::OCCUPY:
+		g_CBehaviorManager.GetOccupyTree()->Run(&m_board);
 		break;
 	}
 }

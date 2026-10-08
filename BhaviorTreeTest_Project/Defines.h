@@ -62,7 +62,7 @@ enum eAstarTargetType
 {
 	None,
 	Region,
-	Pos,
+	InRegionRandomPos,
 };
 
 typedef struct st_Pos

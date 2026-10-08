@@ -50,6 +50,8 @@ public:
 	int GetEmptyRegion(std::vector<int>& vec, st_Pos pos);
 	CPartsBase* GetPart(st_Pos pos);
 	int GetRegionIndex(st_Pos pos) { return m_vecMapStat[pos.Y][pos.X].iRegionIndex; }
+	eTeam GetRegionOccupyTeam(int regionindex) { return m_vecRegion[regionindex]->GetOccupyTeam(); }
+	int GetRegionOppositeCount(int regionindex);
 
 private:
 	bool FindShape(int sX, int sY, st_Rect& region, std::vector<st_Part>& vecParts);

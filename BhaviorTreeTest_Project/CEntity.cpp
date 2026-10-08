@@ -65,10 +65,13 @@ void CEntity::OnSpawn()
 bool CEntity::GetMoveNextPosInfo(st_PosInfo& posinfo)
 {
 	if (m_queueMovePath.empty())
-		return false;
+	{
+		if (!NetMovePath())
+			return eBTresult::FAILD;
+	}
 	posinfo = m_queueMovePath.front();
 	
-	return true;
+	return eBTresult::SUCCESS;
 }
 
 void CEntity::InitAstarPathtoMovePath()
@@ -77,6 +80,28 @@ void CEntity::InitAstarPathtoMovePath()
 	m_vecAstarPath.pop_back();
 
 	m_Ai.GetMap()->BresenhamLine(m_stPos.X, m_stPos.Y, nodePos.X, nodePos.Y, m_queueMovePath);
+}
+
+void CEntity::ChangeState(eState state)
+{
+	m_Ai.m_board.ResetRuntime();
+
+	m_eState = state;
+}
+
+bool CEntity::NetMovePath()
+{
+	if (m_vecAstarPath.empty() || !m_queueMovePath.empty())
+		return eBTresult::FAILD;
+
+	st_Pos nodePos = m_vecAstarPath.back();
+	m_vecAstarPath.pop_back();
+
+	m_Ai.GetMap()->BresenhamLine(m_stPos.X, m_stPos.Y, nodePos.X, nodePos.Y, m_queueMovePath);
+	if (m_queueMovePath.empty())
+		return eBTresult::FAILD;
+
+	return eBTresult::SUCCESS;
 }
 
 int CEntity::Move()
@@ -113,6 +138,7 @@ int CEntity::Move()
 		if (m_iCurrentRegionIndex != -1)
 		{
 			ChangeState(eState::OCCUPY);
+			m_Ai.m_board.m_iOccupyRegionIndex = m_iCurrentRegionIndex;	
 		}
 	}
 

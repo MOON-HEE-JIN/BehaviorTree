@@ -10,6 +10,7 @@ public:
 protected:
 	
 	st_RumtimeNodeInfo m_stinfo;
-	CBlackBoard m_board;
+public:
+	st_BlackBoard m_board;
 };
 

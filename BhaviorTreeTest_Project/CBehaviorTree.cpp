@@ -5,30 +5,51 @@
 #include "CDoor.h"
 #include "CTeam.h"
 
-int CBT_Selector::Run(CBlackBoard* bb)
+int CBT_Selector::Run(st_BlackBoard* bb)
 {
     int currentIndex = 0;
-    if (bb->m_stRuntime.m_iRet == eBTresult::RUNNING)
-        currentIndex = bb->m_stRuntime.m_iCurrentIndex;
+    
+	if (bb->m_mapRuntime.find(this) != bb->m_mapRuntime.end())
+		currentIndex = bb->m_mapRuntime[this].m_iCurrentIndex;
+	
+    int ret = 0;
+
+    int nLoop = m_vecChild.size();
+    for (int i = currentIndex; i < nLoop; i++)
+    {
+        ret = m_vecChild[i]->Run(bb);
+
+		if (ret == eBTresult::RUNNING)
+		{
+            bb->PushRuntime(this, st_RumtimeNodeInfo{ ret, i });
+			break;
+		}
+        else 
+            break;
+    }
+
+    return ret;
+}
+
+int CBT_Sequence::Run(st_BlackBoard* bb)
+{
+    int currentIndex = 0;
+    
+	if (bb->m_mapRuntime.find(this) != bb->m_mapRuntime.end())
+		currentIndex = bb->m_mapRuntime[this].m_iCurrentIndex;
 
     int ret = 0;
 
     int nLoop = m_vecChild.size();
-    for (int i = 0; i < nLoop; i++)
+    for (int i = currentIndex; i < nLoop; i++)
     {
         ret = m_vecChild[i]->Run(bb);
 
-        switch (ret)
+		if (ret == eBTresult::FAILD)
+			break;
+        else if (ret == eBTresult::RUNNING)
         {
-        case eBTresult::FAILD:
-            break;
-        case eBTresult::SUCCESS:
-            break;
-        case eBTresult::RUNNING:
-            bb->m_stRuntime.m_iRet = ret;
-            bb->m_stRuntime.m_iCurrentIndex = i;
-            break;
-        default:
+			bb->PushRuntime(this, st_RumtimeNodeInfo{ ret, i });
             break;
         }
     }
@@ -36,44 +57,21 @@ int CBT_Selector::Run(CBlackBoard* bb)
     return ret;
 }
 
-int CBT_Sequence::Run(CBlackBoard* bb)
-{
-    int currentIndex = 0;
-    if (bb->m_stRuntime.m_iRet == eBTresult::RUNNING)
-        currentIndex = bb->m_stRuntime.m_iCurrentIndex;
-
-    int ret = 0;
-
-    int nLoop = m_vecChild.size();
-    for (int i = 0; i < nLoop; i++)
-    {
-        ret = m_vecChild[i]->Run(bb);
-
-        switch (ret)
-        {
-        case eBTresult::FAILD:
-            break;
-        case eBTresult::RUNNING:
-            bb->m_stRuntime.m_iRet = ret;
-            bb->m_stRuntime.m_iCurrentIndex = i;
-            break;
-        default:
-            break;
-        }
-    }
-
-    return ret;
-}
-
-int CBT_FindNearRegion::Run(CBlackBoard* bb)
+int CBT_FindNearRegion::Run(st_BlackBoard* bb)
 {
     int index = bb->m_pMap->GetNearRegionIndex(bb->m_pEntity->GetPos());
     bb->m_iTargetRegionIndex = index;
+    CRegion* pRegion = bb->m_pMap->GetRegion(bb->m_iTargetRegionIndex);
+	if (pRegion == nullptr)
+		return eBTresult::FAILD;
+
+    bb->m_stRegionCenterPos = pRegion->GetPos();
     bb->m_eAstarTargetType = eAstarTargetType::Region;
+    
     return eBTresult::SUCCESS;
 }
 
-int CBT_FindPath::Run(CBlackBoard* bb)
+int CBT_FindPath::Run(st_BlackBoard* bb)
 {
     st_Pos goal;
     switch (bb->m_eAstarTargetType)
@@ -81,13 +79,11 @@ int CBT_FindPath::Run(CBlackBoard* bb)
 	case eAstarTargetType::None:
 		return eBTresult::FAILD;
 	case eAstarTargetType::Region:
-    {
-        CRegion* pRegion = bb->m_pMap->GetRegion(bb->m_iTargetRegionIndex);
-        goal = pRegion->GetPos();
-    }
+        goal = bb->m_stRegionCenterPos;
 		break;
-	case eAstarTargetType::Pos:
-		return eBTresult::FAILD;
+	case eAstarTargetType::InRegionRandomPos:
+		goal = bb->m_stRegionInsidePos;
+        break;
 	default:
 		return eBTresult::FAILD;
     }
@@ -100,11 +96,12 @@ int CBT_FindPath::Run(CBlackBoard* bb)
 		return eBTresult::FAILD;
 
 	bb->m_pEntity->InitAstarPathtoMovePath();
+	bb->m_stGoalPos = goal;
 
     return eBTresult::SUCCESS;
 }
 
-int CBT_Move::Run(CBlackBoard* bb)
+int CBT_Move::Run(st_BlackBoard* bb)
 {
     return bb->m_pEntity->Move();
 }
@@ -123,7 +120,7 @@ CBehaviorTree::~CBehaviorTree()
     delete m_Root;
 }
 
-int CBT_CheckDoor::Run(CBlackBoard* bb)
+int CBT_CheckDoor::Run(st_BlackBoard* bb)
 {
     st_PosInfo info;
     if (!bb->m_pEntity->GetMoveNextPosInfo(info))
@@ -142,7 +139,7 @@ int CBT_CheckDoor::Run(CBlackBoard* bb)
     return eBTresult::SUCCESS;
 }
 
-int CBT_OpenDoor::Run(CBlackBoard* bb)
+int CBT_OpenDoor::Run(st_BlackBoard* bb)
 {
     st_PosInfo info;
     if (!bb->m_pEntity->GetMoveNextPosInfo(info))
@@ -160,13 +157,17 @@ int CBT_OpenDoor::Run(CBlackBoard* bb)
     return eBTresult::SUCCESS;
 }
 
-int CBT_MoveSelector::Run(CBlackBoard* bb)
+int CBT_MoveSelector::Run(st_BlackBoard* bb)
 {
     int ret = 0;
 
 	st_PosInfo info;
-	if(!bb->m_pEntity->GetMoveNextPosInfo(info))
+    if (!bb->m_pEntity->GetMoveNextPosInfo(info))
+    {
+		if (bb->m_pEntity->GetPos() == bb->m_stGoalPos)
+			return eBTresult::SUCCESS;
 		return eBTresult::FAILD;
+    }
 
     // 임시
     switch (info.iType)
@@ -186,7 +187,7 @@ int CBT_MoveSelector::Run(CBlackBoard* bb)
     return ret;
 }
 
-int CBT_IsMove::Run(CBlackBoard* bb)
+int CBT_IsMove::Run(st_BlackBoard* bb)
 {
     st_PosInfo info;
     if (!bb->m_pEntity->GetMoveNextPosInfo(info))
@@ -200,7 +201,7 @@ int CBT_IsMove::Run(CBlackBoard* bb)
 	return bb->m_pMap->GetPart(info.pos)->IsMove() ? eBTresult::SUCCESS : eBTresult::FAILD;
 }
 
-int CBT_ConditionBranch::Run(CBlackBoard* bb)
+int CBT_ConditionBranch::Run(st_BlackBoard* bb)
 {
 	int branch = m_pCondition->Run(bb);
 
@@ -210,7 +211,7 @@ int CBT_ConditionBranch::Run(CBlackBoard* bb)
 	return m_vecChild[branch]->Run(bb);
 }
 
-int CBT_FindEmptyOccupyRegion::Run(CBlackBoard* bb)
+int CBT_FindEmptyOccupyRegion::Run(st_BlackBoard* bb)
 {
 	std::vector<int> vecRegionIndex;
     bb->m_pTeam->GetEmptyRegion(vecRegionIndex);
@@ -221,7 +222,45 @@ int CBT_FindEmptyOccupyRegion::Run(CBlackBoard* bb)
 		return eBTresult::FAILD;
 
     bb->m_iTargetRegionIndex = index;
+    
+    CRegion* pRegion = bb->m_pMap->GetRegion(bb->m_iTargetRegionIndex);
+    
+    bb->m_stRegionCenterPos = pRegion->GetPos();
     bb->m_eAstarTargetType = eAstarTargetType::Region;
 
     return eBTresult::SUCCESS;
+}
+
+int CBT_CheckEnemyInRegion::Run(st_BlackBoard* bb)
+{
+	int EnemyCount = bb->m_pMap->GetRegionOppositeCount(bb->m_iOccupyRegionIndex);
+    
+	if (EnemyCount > 0)
+		return eBTresult::SUCCESS;
+    return eBTresult::FAILD;
+}
+
+int CBT_FindOccupyingRegionInPos::Run(st_BlackBoard* bb)
+{
+	CRegion* pRegion = bb->m_pMap->GetRegion(bb->m_iOccupyRegionIndex);
+	if (pRegion == nullptr)
+		return eBTresult::FAILD;
+
+	bb->m_stRegionInsidePos = pRegion->GetRegionInsidePos();
+	bb->m_eAstarTargetType = eAstarTargetType::InRegionRandomPos;
+
+    return eBTresult::SUCCESS;
+}
+
+int CBT_Occupy::Run(st_BlackBoard* bb)
+{
+	if(bb->m_pMap->GetRegion(bb->m_iOccupyRegionIndex)->GetOccupyTeam() == bb->m_pTeam->GetTeam())
+	{
+		printf("Occupy Region[%d] eTeam %s\n", bb->m_iOccupyRegionIndex, bb->m_pTeam->GetTeam() == eTeam::RED ? "Red" : "Blue");
+		bb->m_pEntity->ChangeState(eState::IDLE);
+		bb->m_pTeam->OnOccupyRegion(bb->m_iOccupyRegionIndex, bb->m_pTeam->GetTeam());
+		return eBTresult::SUCCESS;
+	}
+	
+    return eBTresult::RUNNING;
 }
