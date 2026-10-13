@@ -139,12 +139,19 @@ int CEntity::Move()
 			}
 		}
 
-        // BT 규칙 검토: 목표나 점령 팀에 관계없이 어느 Region 진입에도 Occupy로 전환한다.
-		if (m_iCurrentRegionIndex != -1)
+        if (m_iCurrentRegionIndex != -1)
 		{
-			ChangeState(eState::Occupy);
-			m_ai.SetOccupyRegionIndex(m_iCurrentRegionIndex);
+			CRegion* pNewRegion = m_ai.GetMap()->GetRegion(m_iCurrentRegionIndex);
+			if (pNewRegion)
+			{
+				if (pNewRegion->GetOccupyTeam() != m_eTeam)
+				{
+					ChangeState(eState::Occupy);
+					m_ai.SetOccupyRegionIndex(m_iCurrentRegionIndex);
+				}
+			}	
 		}
+
 	}
 
 	m_queueMovePath.pop();
