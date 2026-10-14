@@ -1,5 +1,6 @@
 ﻿#include "CBehaviorTree.h"
 #include "Defines.h"
+#include "CSimulatorManager.h"
 #include "CEntity.h"
 #include "CMap.h"
 #include "CDoor.h"
@@ -286,4 +287,17 @@ void CBT_ConditionBranch::SetCondition(CBTNode* pCondition)
         delete m_pCondition;
         m_pCondition = pCondition;
     }
+}
+
+int CBT_IsEnemyNear::Run(st_BlackBoard* bb)
+{
+    int ret = g_SimulatorManager->FindNearEnemy(bb->m_pEntity, bb->m_vecDetectionEnemy);
+    
+    if (ret > 0)
+    {
+        bb->m_iEnemyId = bb->m_vecDetectionEnemy[0]->GetId();
+        return eBTresult::Success;
+    }
+
+    return eBTresult::Failed;
 }

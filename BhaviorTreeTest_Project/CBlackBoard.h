@@ -20,10 +20,13 @@ struct st_BlackBoard
 	CTeam* m_pTeam = nullptr;
 
 	std::unordered_map<CBTNode*, st_RuntimeNodeInfo> m_mapRuntime;
+	std::vector<CEntity*> m_vecDetectionEnemy;
 
 	eAstarTargetType m_eAstarTargetType = eAstarTargetType::None;
 	int m_iTargetRegionIndex = -1;
 	int m_iOccupyRegionIndex = -1;
+	int m_iEnemyId = -1;
+
 	st_Pos m_stRegionCenterPos;
 	st_Pos m_stRegionInsidePos;
 

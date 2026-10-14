@@ -27,6 +27,9 @@ void CBehaviorManager::CreateEntityIdleTree()
 	}
 }
 
+void CBehaviorManager::CreateEntityCombatTree()
+{}
+
 void CBehaviorManager::CreateEntityOccupyTree()
 {
 
@@ -70,9 +73,11 @@ CBT_MoveSelector* CBehaviorManager::CreateMoveSelector()
 
 	CBT_Sequence* pSequenceMove = new CBT_Sequence();
 	CBT_IsMove* pIsMove = new CBT_IsMove();
+	CBT_IsEnemyNear* pIsEnemy = new CBT_IsEnemyNear();
 	CBT_Move* pMove = new CBT_Move();
 
 	pSequenceMove->Push(pIsMove);
+	pSequenceMove->Push(pIsEnemy);
 	pSequenceMove->Push(pMove);
 
 	{

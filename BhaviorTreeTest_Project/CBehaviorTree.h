@@ -146,3 +146,9 @@ class CBT_Occupy : public CBT_Leaf
 public:
 	int Run(st_BlackBoard* bb) override;
 };
+
+class CBT_IsEnemyNear : public CBT_Condition
+{
+public:
+	int Run(st_BlackBoard* bb) override;
+};
