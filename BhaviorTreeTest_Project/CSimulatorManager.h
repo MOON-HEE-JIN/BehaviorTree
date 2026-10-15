@@ -24,6 +24,7 @@ private:
 	int m_iEntityId;
 public:
 	void NewUpdatePushTimerWheel(TWHEEL* pTweel);
+	void NotifyOccupyRegion(int index, eTeam team);
 	// WinObject을(를) 통해 상속됨
 	void Update() override;
 	void Render(HDC hdc) override;

@@ -4,6 +4,7 @@
 #include "CMap.h"
 #include "CDoor.h"
 #include "CTeam.h"
+#include "CSimulatorManager.h"
 
 int CBT_Selector::Run(st_BlackBoard* bb)
 {
@@ -258,7 +259,8 @@ int CBT_Occupy::Run(st_BlackBoard* bb)
 	{
 		printf("Occupy Region[%d] eTeam %s\n", bb->m_iOccupyRegionIndex, bb->m_pTeam->GetTeam() == eTeam::Red ? "Red" : "Blue");
 		bb->m_pEntity->ChangeState(eState::Idle);
-		bb->m_pTeam->OnOccupyRegion(bb->m_iOccupyRegionIndex, bb->m_pTeam->GetTeam());
+
+        g_SimulatorManager->NotifyOccupyRegion(bb->m_iOccupyRegionIndex, bb->m_pTeam->GetTeam());
 		return eBTresult::Success;
 	}
 

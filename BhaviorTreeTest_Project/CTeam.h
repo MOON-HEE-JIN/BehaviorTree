@@ -20,5 +20,5 @@ public:
 	void GetEmptyRegion(std::vector<int>& vec) const;
 
 	void AddMember() { m_iMemberCount++; m_iAliveCount++; }
-	void OnOccupyRegion(int regionindex, eTeam team) { m_vecRegionOccupy[regionindex] = team; }
+	void OnOccupyRegion(int regionindex, eTeam team);
 };
