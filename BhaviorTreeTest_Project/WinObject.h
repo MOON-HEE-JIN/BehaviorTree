@@ -7,7 +7,7 @@ class WinObject
 {
 private:
 	int m_iUpdateTime = 1000;
-	int m_iRenderSize = 8;
+	const int m_iRenderSize = 8;
 	int m_iRenderHalfSize = 4;
 
 	int m_iRenderPrivateSize = 0;

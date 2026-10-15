@@ -1,40 +1,74 @@
 ﻿#include "CEntity.h"
 #include <Windows.h>
-#include <gdiplus.h>
+
 #include <string>
 #include <math.h>
 #include <list>
 #include "WinThread.h"
-using namespace Gdiplus;
 
 CEntity::CEntity(eTeam team, int id)
+	:m_hDetectionBrush(Gdiplus::Color(100, 53, 53, 53))
+	, m_hDetectionPen(Gdiplus::Color(0,0,0))
 {
 	m_eTeam = team;
 	m_iID = id;
 	m_iCurrentRegionIndex = -1;
-
+	
 	switch (team)
 	{
 	case eTeam::None:
 		break;
 	case eTeam::Red:
 		m_hRenderBrush = CreateSolidBrush(RGB(100, 20, 20));
+		m_hDetectionPen.SetColor(Gdiplus::Color(100, 20, 20));
 		break;
 	case eTeam::Blue:
 		m_hRenderBrush = CreateSolidBrush(RGB(20, 20, 100));
+		m_hDetectionPen.SetColor(Gdiplus::Color(20, 20, 100));
 		break;
 	}
 
-	SetRenderPrivateSize(8);
+	
+	SetRenderPrivateSize(16);
+	SetDetectionRadius(8);
 
 	SetUpdateTime(250);
+}
+
+void CEntity::RenderCharacter(HDC hdc)
+{
+	SelectObject(hdc, m_hRenderBrush);
+	Ellipse(hdc
+		, m_stRenderPos.X - GetRenderPrivateHalfSize()
+		, m_stRenderPos.Y - GetRenderPrivateHalfSize()
+		, m_stRenderPos.X + GetRenderPrivateHalfSize()
+		, m_stRenderPos.Y + GetRenderPrivateHalfSize());
+}
+
+void CEntity::RenderDetection(HDC hdc)
+{
+	Gdiplus::Graphics graphics(hdc);
+
+	int X = m_stRenderPos.X - GetRenderDetectionRadiusSize();
+	int Y = m_stRenderPos.Y - GetRenderDetectionRadiusSize();
+	int Size = GetRenderDetectionRadiusSize() * 2;
+	
+	graphics.FillEllipse(&m_hDetectionBrush, X, Y, Size, Size);
+
+	graphics.DrawEllipse(&m_hDetectionPen, X, Y, Size, Size);
+
+	X = m_stRenderPos.X - GetRenderAttackRangeSize();
+	Y = m_stRenderPos.Y - GetRenderAttackRangeSize();
+	Size = GetRenderAttackRangeSize() * 2;
+	graphics.DrawEllipse(&m_hDetectionPen, X, Y, Size, Size);
 }
 
 void CEntity::Init(st_Pos& spawnpos)
 {
 	SetPos(spawnpos);
+	SetAttackRange(5);
 	m_eState = eState::Spawn;
-
+	
 	m_ai.SetTarget(this);
 }
 
@@ -45,12 +79,16 @@ void CEntity::Update()
 
 void CEntity::Render(HDC hdc)
 {
-	SelectObject(hdc, m_hRenderBrush);
-	Ellipse(hdc
-		, m_stRenderPos.X - GetRenderHalfSize() - GetRenderPrivateHalfSize()
-		, m_stRenderPos.Y - GetRenderHalfSize() - GetRenderPrivateHalfSize()
-		, m_stRenderPos.X + GetRenderHalfSize() + GetRenderPrivateHalfSize()
-		, m_stRenderPos.Y + GetRenderHalfSize() + GetRenderPrivateHalfSize());
+	if (!GetEnable())
+		return;
+	RenderCharacter(hdc);
+}
+
+void CEntity::Render_Layer_01(HDC hdc)
+{
+	if (!GetEnable())
+		return;
+	RenderDetection(hdc);
 }
 
 void CEntity::OnSpawn()
@@ -58,6 +96,35 @@ void CEntity::OnSpawn()
 	ChangeState(eState::Idle);
 	m_ai.SetMap(g_SimulatorManager->GetMap());
 	m_ai.SetTarget(this);
+}
+
+int CEntity::OnAttack(int id)
+{
+	if (id < 0)
+		return eBTresult::Failed;
+	CEntity* pEnemy = g_SimulatorManager->GetEntity(id);
+	if (pEnemy == nullptr)
+		return eBTresult::Failed;
+
+	pEnemy->OnDamage(GetId(), 10);
+
+	return eBTresult::Success;
+}
+
+int CEntity::OnDamage(int id, int damage)
+{
+	int preHP = m_iHP;
+	m_iHP -= damage;
+	
+	printf("Entity[%d] -attack-> Entity[%d][%d][%d]\n", id, GetId(), preHP, m_iHP);
+	if (m_iHP <= 0)
+		OnDead();
+	return 0;
+}
+
+void CEntity::OnDead()
+{
+	SetEnable(false);
 }
 
 bool CEntity::GetMoveNextPosInfo(st_PosInfo& posinfo)

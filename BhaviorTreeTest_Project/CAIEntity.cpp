@@ -25,6 +25,7 @@ void CAIEntity::Update()
 		g_CBehaviorManager.GetIdleTree()->Run(&m_blackBoard);
 		break;
 	case eState::Combat:
+		g_CBehaviorManager.GetCombatTree()->Run(&m_blackBoard);
 		break;
 	case eState::Occupy:
 		g_CBehaviorManager.GetOccupyTree()->Run(&m_blackBoard);

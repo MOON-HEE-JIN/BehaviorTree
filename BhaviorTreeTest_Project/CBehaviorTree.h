@@ -146,3 +146,41 @@ class CBT_Occupy : public CBT_Leaf
 public:
 	int Run(st_BlackBoard* bb) override;
 };
+
+class CBT_IsEnemyNear : public CBT_Condition
+{
+public:
+	int Run(st_BlackBoard* bb) override;
+protected:
+	virtual int FindNearEnemys(st_BlackBoard* bb);
+};
+
+class CBT_IsEnemyNearCombatTree : public CBT_IsEnemyNear
+{
+public:
+	int Run(st_BlackBoard* bb) override;
+};
+
+class CBT_IsEnemyNearMoveTree : public CBT_IsEnemyNear
+{
+public:
+	int Run(st_BlackBoard* bb) override;
+};
+
+class CBT_SetEnemyTarget : public CBT_Condition
+{
+public:
+	int Run(st_BlackBoard* bb) override;
+};
+
+class CBT_IsAttack : public CBT_Condition
+{
+public:
+	int Run(st_BlackBoard* bb) override;
+};
+
+class CBT_Attack : public CBT_Leaf
+{
+public:
+	int Run(st_BlackBoard* bb) override;
+};

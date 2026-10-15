@@ -24,6 +24,7 @@ private:
 
 private:
 	CBT_MoveSelector* CreateMoveSelector();
+	CBT_MoveSelector* CreateCombatMoveSelector();
 };
 
 extern CBehaviorManager g_CBehaviorManager;

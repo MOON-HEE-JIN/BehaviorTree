@@ -6,6 +6,7 @@ CBehaviorManager::CBehaviorManager()
 {
 	CreateEntityIdleTree();
 	CreateEntityOccupyTree();
+	CreateEntityCombatTree();
 }
 
 void CBehaviorManager::CreateEntityIdleTree()
@@ -27,9 +28,50 @@ void CBehaviorManager::CreateEntityIdleTree()
 	}
 }
 
+void CBehaviorManager::CreateEntityCombatTree()
+{
+	CBT_ConditionBranch* pBranchRoot = new CBT_ConditionBranch();
+	m_combatTree.SetRoot(pBranchRoot);
+
+	CBT_SetEnemyTarget* pSetTarget = new CBT_SetEnemyTarget();
+	pBranchRoot->SetCondition(pSetTarget);
+
+	{
+		// eBTresult::Failed
+		CBT_IsEnemyNearCombatTree* pNear = new CBT_IsEnemyNearCombatTree();
+		pBranchRoot->Push(pNear);
+	}
+	{
+		// eBTresult::Success
+		CBT_Sequence* pSequence = new CBT_Sequence();
+		CBT_SetEnemyTarget* pSetTarget = new CBT_SetEnemyTarget();
+		pSequence->Push(pSetTarget);
+
+		CBT_ConditionBranch* pAttackRoot = new CBT_ConditionBranch();
+		CBT_IsAttack* pIsAttack = new CBT_IsAttack();
+		pAttackRoot->SetCondition(pIsAttack);
+		{
+			// 공격 실패시 이동
+			CBT_Sequence* pFSequence = new CBT_Sequence();
+			CBT_FindPath* pFindPath = new CBT_FindPath();
+			pFSequence->Push(pFindPath);
+			pFSequence->Push(CreateCombatMoveSelector());
+			pAttackRoot->Push(pFSequence);
+		}
+		{
+			// 공격 판정 성공
+			CBT_Attack* pAttack = new CBT_Attack();
+			pAttackRoot->Push(pAttack);
+		}
+		pSequence->Push(pAttackRoot);
+
+		pBranchRoot->Push(pSequence);
+	}
+
+}
+
 void CBehaviorManager::CreateEntityOccupyTree()
 {
-
 	CBT_ConditionBranch* pBranchRoot = new CBT_ConditionBranch();
 	m_occupyTree.SetRoot(pBranchRoot);
 
@@ -70,6 +112,33 @@ CBT_MoveSelector* CBehaviorManager::CreateMoveSelector()
 
 	CBT_Sequence* pSequenceMove = new CBT_Sequence();
 	CBT_IsMove* pIsMove = new CBT_IsMove();
+	CBT_IsEnemyNearMoveTree* pIsEnemy = new CBT_IsEnemyNearMoveTree();
+	CBT_Move* pMove = new CBT_Move();
+
+	pSequenceMove->Push(pIsMove);
+	pSequenceMove->Push(pIsEnemy);
+	pSequenceMove->Push(pMove);
+
+	{
+		pMoveSelector->Push(pSequenceMove);
+		pMoveSelector->Push(pSequenceDoor);
+	}
+    return pMoveSelector;
+}
+
+CBT_MoveSelector* CBehaviorManager::CreateCombatMoveSelector()
+{
+	CBT_MoveSelector* pMoveSelector = new CBT_MoveSelector();
+
+	CBT_Sequence* pSequenceDoor = new CBT_Sequence();
+	CBT_CheckDoor* pCheckDoor = new CBT_CheckDoor();
+	CBT_OpenDoor* pOpenDoor = new CBT_OpenDoor();
+
+	pSequenceDoor->Push(pCheckDoor);
+	pSequenceDoor->Push(pOpenDoor);
+
+	CBT_Sequence* pSequenceMove = new CBT_Sequence();
+	CBT_IsMove* pIsMove = new CBT_IsMove();
 	CBT_Move* pMove = new CBT_Move();
 
 	pSequenceMove->Push(pIsMove);
@@ -79,5 +148,5 @@ CBT_MoveSelector* CBehaviorManager::CreateMoveSelector()
 		pMoveSelector->Push(pSequenceMove);
 		pMoveSelector->Push(pSequenceDoor);
 	}
-    return pMoveSelector;
+	return pMoveSelector;
 }

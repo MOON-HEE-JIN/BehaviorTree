@@ -32,6 +32,7 @@ enum class eState
 	Idle,
 	Combat,
 	Occupy,
+	Dead,
 	End,
 };
 
@@ -63,6 +64,7 @@ enum class eAstarTargetType
 	None,
 	Region,
 	InRegionRandomPos,
+	Enemy,
 };
 
 typedef struct st_Pos
