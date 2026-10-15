@@ -36,6 +36,9 @@ public:
     void Render(HDC hdc) override;
     void Render_Layer_01(HDC hdc) override;
     void OnSpawn() override;
+    int OnAttack(int id) override;
+    int OnDamage(int id, int damage) override;
+    void OnDead() override;
 
     eTeam GetTeam() const { return m_eTeam; }
     eState GetState() const { return m_eState; }

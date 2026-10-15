@@ -49,20 +49,26 @@ void CEntity::RenderDetection(HDC hdc)
 {
 	Gdiplus::Graphics graphics(hdc);
 
-	int X = m_stRenderPos.X - GetRenderDetectionRadiusHalfSize();
-	int Y = m_stRenderPos.Y - GetRenderDetectionRadiusHalfSize();
+	int X = m_stRenderPos.X - GetRenderDetectionRadiusSize();
+	int Y = m_stRenderPos.Y - GetRenderDetectionRadiusSize();
 	int Size = GetRenderDetectionRadiusSize() * 2;
 	
 	graphics.FillEllipse(&m_hDetectionBrush, X, Y, Size, Size);
 
+	graphics.DrawEllipse(&m_hDetectionPen, X, Y, Size, Size);
+
+	X = m_stRenderPos.X - GetRenderAttackRangeSize();
+	Y = m_stRenderPos.Y - GetRenderAttackRangeSize();
+	Size = GetRenderAttackRangeSize() * 2;
 	graphics.DrawEllipse(&m_hDetectionPen, X, Y, Size, Size);
 }
 
 void CEntity::Init(st_Pos& spawnpos)
 {
 	SetPos(spawnpos);
+	SetAttackRange(5);
 	m_eState = eState::Spawn;
-
+	
 	m_ai.SetTarget(this);
 }
 
@@ -73,11 +79,15 @@ void CEntity::Update()
 
 void CEntity::Render(HDC hdc)
 {
+	if (!GetEnable())
+		return;
 	RenderCharacter(hdc);
 }
 
 void CEntity::Render_Layer_01(HDC hdc)
 {
+	if (!GetEnable())
+		return;
 	RenderDetection(hdc);
 }
 
@@ -86,6 +96,35 @@ void CEntity::OnSpawn()
 	ChangeState(eState::Idle);
 	m_ai.SetMap(g_SimulatorManager->GetMap());
 	m_ai.SetTarget(this);
+}
+
+int CEntity::OnAttack(int id)
+{
+	if (id < 0)
+		return eBTresult::Failed;
+	CEntity* pEnemy = g_SimulatorManager->GetEntity(id);
+	if (pEnemy == nullptr)
+		return eBTresult::Failed;
+
+	pEnemy->OnDamage(GetId(), 10);
+
+	return eBTresult::Success;
+}
+
+int CEntity::OnDamage(int id, int damage)
+{
+	int preHP = m_iHP;
+	m_iHP -= damage;
+	
+	printf("Entity[%d] -attack-> Entity[%d][%d][%d]\n", id, GetId(), preHP, m_iHP);
+	if (m_iHP <= 0)
+		OnDead();
+	return 0;
+}
+
+void CEntity::OnDead()
+{
+	SetEnable(false);
 }
 
 bool CEntity::GetMoveNextPosInfo(st_PosInfo& posinfo)

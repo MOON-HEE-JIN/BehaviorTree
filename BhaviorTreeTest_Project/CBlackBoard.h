@@ -29,6 +29,7 @@ struct st_BlackBoard
 
 	st_Pos m_stRegionCenterPos;
 	st_Pos m_stRegionInsidePos;
+	st_Pos m_stEnemyPos;
 
 	st_Pos m_stGoalPos;
 	void ResetRuntime()

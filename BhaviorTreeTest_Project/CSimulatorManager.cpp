@@ -23,7 +23,7 @@ CSimulatorManager::CSimulatorManager()
 	CTeam* pTeam = new CTeam(eTeam::None, 0);
 	m_vecTeam.push_back(pTeam);
 	CreateEntity(eTeam::Red, 1);
-	CreateEntity(eTeam::Blue, 1);
+	//CreateEntity(eTeam::Blue, 1);
 
 	CreateScarecrow();
 }
@@ -59,6 +59,12 @@ void CSimulatorManager::Update()
 				delete pTwheel;
 				break;
 			}
+			if (!pObject->GetEnable())
+			{
+				delete pTwheel;
+				break;
+			}
+
 			pTwheel->TotalTimer = pObject->GetUpdateTime();
 			m_updateTimerWheel.Push(pTwheel);
 
@@ -184,6 +190,9 @@ CEntity* CSimulatorManager::GetEntity(int id)
 		return nullptr;
 
 	CEntity* pEntity = m_vecEntity[id];
+	if (pEntity->GetState() == eState::Dead)
+		return nullptr;
+
 	return pEntity->GetId() == id ? pEntity : nullptr;
 }
 
@@ -206,6 +215,9 @@ int CSimulatorManager::FindNearEnemy(CEntity* pEntity, std::vector<CEntity*>& ve
 	for (int i = 0; i < loop; i++)
 	{
 		CEntity* pEnemy = v[i];
+
+		if (!pEnemy->GetEnable())
+			continue;
 
 		int dist = pos.LengthLength(pEnemy->GetPos());
 		if (dd < dist)

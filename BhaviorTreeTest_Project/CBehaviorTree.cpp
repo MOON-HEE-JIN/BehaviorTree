@@ -85,6 +85,9 @@ int CBT_FindPath::Run(st_BlackBoard* bb)
 	case eAstarTargetType::InRegionRandomPos:
 		goal = bb->m_stRegionInsidePos;
         break;
+    case eAstarTargetType::Enemy:
+        goal = bb->m_stEnemyPos;
+        break;
 	default:
 		return eBTresult::Failed;
     }
@@ -291,7 +294,7 @@ void CBT_ConditionBranch::SetCondition(CBTNode* pCondition)
 
 int CBT_IsEnemyNear::Run(st_BlackBoard* bb)
 {
-    int ret = g_SimulatorManager->FindNearEnemy(bb->m_pEntity, bb->m_vecDetectionEnemy);
+    int ret = FindNearEnemys(bb);
     
     if (ret > 0)
     {
@@ -300,4 +303,69 @@ int CBT_IsEnemyNear::Run(st_BlackBoard* bb)
     }
 
     return eBTresult::Failed;
+}
+
+int CBT_IsEnemyNear::FindNearEnemys(st_BlackBoard* bb)
+{
+    return g_SimulatorManager->FindNearEnemy(bb->m_pEntity, bb->m_vecDetectionEnemy);;
+}
+
+int CBT_IsEnemyNearCombatTree::Run(st_BlackBoard* bb)
+{
+    if (FindNearEnemys(bb))
+    {
+        return eBTresult::Success;
+    }
+    bb->m_pEntity->ChangeState(eState::Idle);
+    return eBTresult::Failed;
+}
+
+int CBT_IsEnemyNearMoveTree::Run(st_BlackBoard* bb)
+{
+    // MoveTree 에서 적 발견시 Combat 상태로 변경해야하기에 Failed 로 리턴 
+    // 이동중에는 발견하지 않는것을 Success 로
+    if (FindNearEnemys(bb))
+    {
+        bb->m_pEntity->ChangeState(eState::Combat);
+        return eBTresult::Failed;
+    }
+
+    return eBTresult::Success;
+}
+
+int CBT_SetEnemyTarget::Run(st_BlackBoard* bb)
+{
+    if (bb->m_vecDetectionEnemy.size() <= 0)
+        return eBTresult::Failed;
+
+    if (!bb->m_vecDetectionEnemy[0]->GetEnable())
+        return eBTresult::Failed;
+
+    bb->m_iEnemyId = bb->m_vecDetectionEnemy[0]->GetId();
+    bb->m_stEnemyPos = bb->m_vecDetectionEnemy[0]->GetPos();
+    bb->m_eAstarTargetType = eAstarTargetType::Enemy;
+
+    return eBTresult::Success;
+}
+
+int CBT_IsAttack::Run(st_BlackBoard* bb)
+{
+    if (bb->m_iEnemyId < 0)
+        return eBTresult::Failed;
+    CEntity* pEnemy = g_SimulatorManager->GetEntity(bb->m_iEnemyId);
+    if (pEnemy == nullptr)
+        return eBTresult::Failed;
+
+    int range = bb->m_pEntity->GetAttackRange();
+    int dist = bb->m_pEntity->GetPos().LengthLength(pEnemy->GetPos());
+    
+    if (range * range < dist)
+        return eBTresult::Failed;
+
+    return eBTresult::Success;
+}
+
+int CBT_Attack::Run(st_BlackBoard* bb)
+{
+    return bb->m_pEntity->OnAttack(bb->m_iEnemyId);
 }
