@@ -5,7 +5,6 @@
 #include "CMap.h"
 #include "CDoor.h"
 #include "CTeam.h"
-#include "CSimulatorManager.h"
 
 int CBT_Selector::Run(st_BlackBoard* bb)
 {
