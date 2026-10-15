@@ -33,6 +33,15 @@ void CSimulatorManager::NewUpdatePushTimerWheel(TWHEEL* pTweel)
 	m_updateTimerWheel.Push(pTweel);
 }
 
+void CSimulatorManager::NotifyOccupyRegion(int index, eTeam team)
+{
+	int loop = m_vecTeam.size();
+	for (int i = 0; i < loop; i++)
+	{
+		m_vecTeam[i]->OnOccupyRegion(index, team);
+	}
+}
+
 void CSimulatorManager::Update()
 {
 	m_updateTimerWheel.Update();

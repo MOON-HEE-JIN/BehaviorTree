@@ -131,14 +131,8 @@ int CEntity::Move()
 			pOldRegion->ExitRegion(m_eTeam, this);
 		CRegion* pNewRegion = m_ai.GetMap()->GetRegion(m_iCurrentRegionIndex);
 		if (pNewRegion)
-		{
 			pNewRegion->EnterRegion(m_eTeam, this);
-			if (pNewRegion->GetOccupyTeam() != m_eTeam && pNewRegion->GetOccupyTeam() != eTeam::None)
-			{
-				m_ai.GetTeam()->OnOccupyRegion(m_iCurrentRegionIndex, pNewRegion->GetOccupyTeam());
-			}
-		}
-
+		
         if (m_iCurrentRegionIndex != -1)
 		{
 			CRegion* pNewRegion = m_ai.GetMap()->GetRegion(m_iCurrentRegionIndex);

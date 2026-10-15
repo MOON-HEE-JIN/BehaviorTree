@@ -19,3 +19,10 @@ void CTeam::GetEmptyRegion(std::vector<int>& vec) const
 		}
 	}
 }
+
+void CTeam::OnOccupyRegion(int regionindex, eTeam team)
+{
+	if (regionindex >= m_vecRegionOccupy.size())
+		return;
+	m_vecRegionOccupy[regionindex] = team;
+}
