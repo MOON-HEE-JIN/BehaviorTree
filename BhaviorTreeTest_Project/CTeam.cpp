@@ -54,7 +54,7 @@ void CTeam::OnOccupyRegion(int regionindex, eTeam team)
 		for (auto& cost : m_vecRegionOccupyCost)
 		{
 			if (cost.index == regionindex)
-				cost.cost += 10;
+				cost.cost += 100;
 		}
 	}
 	else
@@ -64,18 +64,18 @@ void CTeam::OnOccupyRegion(int regionindex, eTeam team)
 			for (auto& cost : m_vecRegionOccupyCost)
 			{
 				if (cost.index == regionindex)
-					cost.cost -= 10;
+					cost.cost -= 100;
 			}
 		}
 	}
 }
 
-void CTeam::AddRegionOccupyCost(int regionindex, bool b)
+void CTeam::AddRegionOccupyCost(int regionindex, int _cost)
 {
 	for (auto& cost : m_vecRegionOccupyCost)
 	{
 		if (cost.index == regionindex)
-			cost.cost += b ? 1 : -1;
+			cost.cost += _cost;
 	}
 
 	std::sort(m_vecRegionOccupyCost.begin(), m_vecRegionOccupyCost.end(),

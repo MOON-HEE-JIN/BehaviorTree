@@ -46,6 +46,8 @@ public:
 	int GetRegionIndex(st_Pos pos) { return m_vecMapStat[pos.Y][pos.X].iRegionIndex; }
 	eTeam GetRegionOccupyTeam(int regionindex) { return m_vecRegion[regionindex]->GetOccupyTeam(); }
 	int GetRegionOppositeCount(int regionindex);
+	int GetRegionOccupyTeamEntitys(int regionindex, eTeam team, std::vector<CEntity*>& vec);
+	const std::vector<CEntity*>& GetRegionTeamEntitys(eTeam team, int regionindex) const;
 
 private:
 	void RenderGrid(HDC hdc);

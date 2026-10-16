@@ -25,6 +25,8 @@ private:
 private:
 	CBT_MoveSelector* CreateMoveSelector();
 	CBT_MoveSelector* CreateCombatMoveSelector();
+	CBT_Sequence* CreateAttackSequence(CBT_Condition* pSetTarget);
+	CBT_Sequence* CreateOccupyAttackSequence();
 };
 
 extern CBehaviorManager g_CBehaviorManager;

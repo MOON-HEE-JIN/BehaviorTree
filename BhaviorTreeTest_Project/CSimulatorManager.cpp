@@ -136,16 +136,14 @@ void CSimulatorManager::CreateMap()
 void CSimulatorManager::CreateEntity(eTeam team, int count)
 {
 	CTeam* pTeam = new CTeam(team, m_pMap->GetRegionCount());
+	st_Pos SpawnPos = m_pMap->GetSpawnPos((int)team);
 	m_vecTeam.push_back(pTeam);
 
 	for (int i = 0; i < count; i++)
 	{
 		CEntity* pEntity = new CEntity(team, m_iEntityId++);
-		st_Pos SpawnPos = m_pMap->GetSpawnPos((int)team);
-
-		SpawnPos.X -= 2 + i * 2;
-
-		pEntity->Init(SpawnPos);
+		
+		pEntity->Init({SpawnPos.X - 2 + i * 2, SpawnPos.Y});
 		pEntity->SetTeam(pTeam);
 
 		TWHEEL* pTweel = new TWHEEL;
@@ -158,6 +156,27 @@ void CSimulatorManager::CreateEntity(eTeam team, int count)
 		m_vecRenderObject.push_back(pEntity);
 		m_vecEntity.push_back(pEntity);
 		m_mapTeamEntity[team].push_back(pEntity);
+	}
+
+	std::vector<st_RegionCost> vec;
+	for (auto& obj : m_pMap->GetRegionVector())
+	{
+		st_RegionCost cost;
+		cost.index = obj->GetRegionIndex();
+		cost.cost = SpawnPos.LengthLength(obj->GetPos());
+		vec.push_back(cost);
+	}
+
+	std::sort(vec.begin(), vec.end(),
+		[](const st_RegionCost& A, const st_RegionCost& B)
+		{
+			return A.cost > B.cost;
+		});
+
+	int initcost = m_pMap->GetRegionCount();
+	for (auto& obj : vec)
+	{
+		pTeam->AddRegionOccupyCost(obj.index, initcost--);
 	}
 }
 

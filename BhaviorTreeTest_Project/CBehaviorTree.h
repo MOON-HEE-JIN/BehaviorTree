@@ -147,6 +147,12 @@ public:
 	int Run(st_BlackBoard* bb) override;
 };
 
+class CBT_DectectionRegionEnemy : public CBT_Condition
+{
+public:
+	int Run(st_BlackBoard* bb) override;
+};
+
 class CBT_FindOccupyingRegionInPos : public CBT_Condition
 {
 public:
@@ -185,6 +191,11 @@ public:
 	int Run(st_BlackBoard* bb) override;
 };
 
+class CBT_SetRegionEnemyTarget : public CBT_Condition
+{
+public:
+	int Run(st_BlackBoard* bb) override;
+};
 class CBT_IsAttack : public CBT_Condition
 {
 public:

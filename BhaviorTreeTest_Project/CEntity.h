@@ -31,7 +31,7 @@ private:
     void RenderDetection(HDC hdc);
 public:
     // CBaseObject을(를) 통해 상속됨
-    void Init(st_Pos& spawnpos) override;
+    void Init(st_Pos spawnpos) override;
     void Update() override;
     void Render(HDC hdc) override;
     void Render_Layer_01(HDC hdc) override;
@@ -45,6 +45,7 @@ public:
     CAIEntity* GetAIController() { return &m_ai; }
     std::vector<st_Pos>& GetAstarPath() { return m_vecAstarPath; }
     bool GetMoveNextPosInfo(st_PosInfo& posinfo);
+    int GetCurrentRegionIndex() { return m_iCurrentRegionIndex; }
 
     void SetTeam(CTeam* pTeam) { m_ai.SetTeam(pTeam); }
 

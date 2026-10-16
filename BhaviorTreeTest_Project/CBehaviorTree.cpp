@@ -77,7 +77,7 @@ int CBT_FindPath::Run(st_BlackBoard* bb)
     st_Pos goal;
     if (bb->m_iRegionCostIndex != -1)
     {
-        bb->m_pTeam->AddRegionOccupyCost(bb->m_iRegionCostIndex, false);
+        bb->m_pTeam->AddRegionOccupyCost(bb->m_iRegionCostIndex, -10);
         bb->m_iRegionCostIndex = -1;
     }
 
@@ -87,7 +87,7 @@ int CBT_FindPath::Run(st_BlackBoard* bb)
 		return eBTresult::Failed;
 	case eAstarTargetType::Region:
         goal = bb->m_stRegionCenterPos;
-        bb->m_pTeam->AddRegionOccupyCost(bb->m_iTargetRegionIndex);
+        bb->m_pTeam->AddRegionOccupyCost(bb->m_iTargetRegionIndex, 10);
         bb->m_iRegionCostIndex = bb->m_iTargetRegionIndex;
 		break;
 	case eAstarTargetType::InRegionRandomPos:
@@ -288,6 +288,18 @@ int CBT_CheckEnemyInRegion::Run(st_BlackBoard* bb)
     return eBTresult::Failed;
 }
 
+int CBT_DectectionRegionEnemy::Run(st_BlackBoard* bb)
+{
+    if (bb->m_pEntity->GetCurrentRegionIndex() == -1)
+        return eBTresult::Failed;
+
+    bb->m_vecDetectionRegionEnemy = bb->m_pMap->GetRegionTeamEntitys(bb->m_pEntity->GetTeam(), bb->m_pEntity->GetCurrentRegionIndex());
+    if (bb->m_vecDetectionRegionEnemy.empty())
+        return eBTresult::Failed;
+
+    return eBTresult::Success;
+}
+
 int CBT_FindOccupyingRegionInPos::Run(st_BlackBoard* bb)
 {
     CRegion* pRegion = bb->m_pMap->GetRegion(bb->m_iOccupyRegionIndex);
@@ -388,6 +400,21 @@ int CBT_SetEnemyTarget::Run(st_BlackBoard* bb)
 
     bb->m_iEnemyId = bb->m_vecDetectionEnemy[0]->GetId();
     bb->m_stEnemyPos = bb->m_vecDetectionEnemy[0]->GetPos();
+    bb->m_eAstarTargetType = eAstarTargetType::Enemy;
+
+    return eBTresult::Success;
+}
+
+int CBT_SetRegionEnemyTarget::Run(st_BlackBoard* bb)
+{
+    if (bb->m_vecDetectionRegionEnemy.size() <= 0)
+        return eBTresult::Failed;
+
+    if (!bb->m_vecDetectionRegionEnemy[0]->GetEnable())
+        return eBTresult::Failed;
+
+    bb->m_iEnemyId = bb->m_vecDetectionRegionEnemy[0]->GetId();
+    bb->m_stEnemyPos = bb->m_vecDetectionRegionEnemy[0]->GetPos();
     bb->m_eAstarTargetType = eAstarTargetType::Enemy;
 
     return eBTresult::Success;

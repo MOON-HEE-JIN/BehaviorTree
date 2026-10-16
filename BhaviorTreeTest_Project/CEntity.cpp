@@ -30,7 +30,7 @@ CEntity::CEntity(eTeam team, int id)
 
 	
 	SetRenderPrivateSize(16);
-	SetDetectionRadius(8);
+	SetDetectionRadius(16);
 
 	SetUpdateTime(250);
 }
@@ -63,7 +63,7 @@ void CEntity::RenderDetection(HDC hdc)
 	graphics.DrawEllipse(&m_hDetectionPen, X, Y, Size, Size);
 }
 
-void CEntity::Init(st_Pos& spawnpos)
+void CEntity::Init(st_Pos spawnpos)
 {
 	SetPos(spawnpos);
 	SetAttackRange(5);
@@ -125,6 +125,15 @@ int CEntity::OnDamage(int id, int damage)
 void CEntity::OnDead()
 {
 	SetEnable(false);
+
+	if (m_iCurrentRegionIndex != -1)
+	{
+		CRegion* Region = m_ai.GetMap()->GetRegion(m_iCurrentRegionIndex);
+		if (Region)
+		{
+			Region->ExitRegion(m_eTeam, this);
+		}
+	}
 }
 
 bool CEntity::GetMoveNextPosInfo(st_PosInfo& posinfo)
@@ -200,7 +209,7 @@ int CEntity::Move()
 		if (pNewRegion)
 			pNewRegion->EnterRegion(m_eTeam, this);
 		
-        if (m_iCurrentRegionIndex != -1)
+        if (m_iCurrentRegionIndex != -1 && m_iCurrentRegionIndex == m_ai.GetTargetRegionIndex())
 		{
 			CRegion* pNewRegion = m_ai.GetMap()->GetRegion(m_iCurrentRegionIndex);
 			if (pNewRegion)

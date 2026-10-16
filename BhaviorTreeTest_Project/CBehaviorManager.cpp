@@ -43,29 +43,7 @@ void CBehaviorManager::CreateEntityCombatTree()
 	}
 	{
 		// eBTresult::Success
-		CBT_Sequence* pSequence = new CBT_Sequence();
-		CBT_SetEnemyTarget* pSetTarget = new CBT_SetEnemyTarget();
-		pSequence->Push(pSetTarget);
-
-		CBT_ConditionBranch* pAttackRoot = new CBT_ConditionBranch();
-		CBT_IsAttack* pIsAttack = new CBT_IsAttack();
-		pAttackRoot->SetCondition(pIsAttack);
-		{
-			// 공격 실패시 이동
-			CBT_Sequence* pFSequence = new CBT_Sequence();
-			CBT_FindPath* pFindPath = new CBT_FindPath();
-			pFSequence->Push(pFindPath);
-			pFSequence->Push(CreateCombatMoveSelector());
-			pAttackRoot->Push(pFSequence);
-		}
-		{
-			// 공격 판정 성공
-			CBT_Attack* pAttack = new CBT_Attack();
-			pAttackRoot->Push(pAttack);
-		}
-		pSequence->Push(pAttackRoot);
-
-		pBranchRoot->Push(pSequence);
+		pBranchRoot->Push(CreateAttackSequence(nullptr));
 	}
 
 }
@@ -89,14 +67,14 @@ void CBehaviorManager::CreateEntityOccupyTree()
 		pSequenceNoEnemy->Push(CreateMoveSelector());
 		pSequenceNoEnemy->Push(pOccupy);
 
-        // BT 규칙 검토: 적 존재 분기에 자식이 없어 전투나 대기 행동이 실행되지 않는다.
-		CBT_Selector* pSelectorEnemy = new CBT_Selector();
-		// 임시노드
-		CBT_TempOccpuyCombatNode* pTemp = new CBT_TempOccpuyCombatNode();
-		pSelectorEnemy->Push(pTemp);
+		CBT_Sequence* pSequenceEnemy = new CBT_Sequence();
+		CBT_DectectionRegionEnemy* pDetectionRegion = new CBT_DectectionRegionEnemy();
 
+		pSequenceEnemy->Push(pDetectionRegion);
+		pSequenceEnemy->Push(CreateAttackSequence(new CBT_SetRegionEnemyTarget()));
+		
 		pBranchRoot->Push(pSequenceNoEnemy);
-		pBranchRoot->Push(pSelectorEnemy);
+		pBranchRoot->Push(pSequenceEnemy);
 	}
 }
 
@@ -153,3 +131,33 @@ CBT_MoveSelector* CBehaviorManager::CreateCombatMoveSelector()
 	}
 	return pMoveSelector;
 }
+
+CBT_Sequence* CBehaviorManager::CreateAttackSequence(CBT_Condition* pSetTarget)
+{
+	CBT_Sequence* pSequence = new CBT_Sequence();
+	
+	if(pSetTarget == nullptr)
+		pSetTarget = new CBT_SetEnemyTarget();
+	pSequence->Push(pSetTarget);
+
+	CBT_ConditionBranch* pAttackRoot = new CBT_ConditionBranch();
+	CBT_IsAttack* pIsAttack = new CBT_IsAttack();
+	pAttackRoot->SetCondition(pIsAttack);
+	{
+		// 공격 실패시 이동
+		CBT_Sequence* pFSequence = new CBT_Sequence();
+		CBT_FindPath* pFindPath = new CBT_FindPath();
+		pFSequence->Push(pFindPath);
+		pFSequence->Push(CreateCombatMoveSelector());
+		pAttackRoot->Push(pFSequence);
+	}
+	{
+		// 공격 판정 성공
+		CBT_Attack* pAttack = new CBT_Attack();
+		pAttackRoot->Push(pAttack);
+	}
+	pSequence->Push(pAttackRoot);
+
+	return pSequence;
+}
+

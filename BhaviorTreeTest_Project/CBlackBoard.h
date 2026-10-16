@@ -21,6 +21,7 @@ struct st_BlackBoard
 
 	std::unordered_map<CBTNode*, st_RuntimeNodeInfo> m_mapRuntime;
 	std::vector<CEntity*> m_vecDetectionEnemy;
+	std::vector<CEntity*> m_vecDetectionRegionEnemy;
 
 	eAstarTargetType m_eAstarTargetType = eAstarTargetType::None;
 	int m_iTargetRegionIndex = -1;

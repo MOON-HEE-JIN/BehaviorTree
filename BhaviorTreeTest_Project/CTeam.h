@@ -20,7 +20,8 @@ public:
 	void OnOccupyRegion(int regionindex, eTeam team);
 
 	void AddMember() { m_iMemberCount++; m_iAliveCount++; }
-	void AddRegionOccupyCost(int regionindex, bool b = true);
+	void AddRegionOccupyCost(int regionindex, int _cost);
+
 
 	eTeam GetTeam() const { return m_eTeam; }
 	void GetEmptyRegion(std::vector<int>& vec) const;

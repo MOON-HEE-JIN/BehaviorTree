@@ -117,6 +117,7 @@ void CRegion::EnterRegion(eTeam team, CEntity* pObj)
 	else
 		EnterOccupyRegion(team);
 
+	m_mapTeamEntity[team].push_back(pObj);
 	printf("Enter Region[%d] eTeam %s\n", m_iIndex, team == eTeam::Red ? "Red" : "Blue");
 }
 
@@ -126,6 +127,19 @@ void CRegion::ExitRegion(eTeam team, CEntity* pObj)
 		m_iOccupyTeamCount--;
 	else
 		m_iOppositeCount--;
+	
+	// 추후 해당 자료구조 수정
+	std::vector<CEntity*>::iterator biter = m_mapTeamEntity[team].begin();
+	std::vector<CEntity*>::iterator eiter = m_mapTeamEntity[team].end();
+	for (biter; biter != eiter; ++biter)
+	{
+		if ((*biter) == pObj)
+		{
+			m_mapTeamEntity[team].erase(biter);
+			break;
+		}
+	}
+	
 }
 
 void CRegion::OccupyRegion()

@@ -172,6 +172,18 @@ int CMap::GetRegionOppositeCount(int regionindex)
 	return pRegion->GetOppositeCount();
 }
 
+int CMap::GetRegionOccupyTeamEntitys(int regionindex, eTeam team, std::vector<CEntity*>& vec)
+{
+
+	return 0;
+}
+
+const std::vector<CEntity*>& CMap::GetRegionTeamEntitys(eTeam team, int regionindex) const
+{
+	// TODO: 여기에 return 문을 삽입합니다.
+	return m_vecRegion[regionindex]->GetTeamEntitys(team);
+}
+
 bool CMap::FindShape(int sX, int sY, st_Rect& region, std::vector<st_Part>& vecParts)
 {
 	bool bSearch = false;

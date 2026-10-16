@@ -9,5 +9,8 @@ public:
 
 protected:
 	st_BlackBoard m_blackBoard;
+
+public:
+	int GetTargetRegionIndex() { return m_blackBoard.m_iTargetRegionIndex; }
 };
 
