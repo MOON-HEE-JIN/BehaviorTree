@@ -41,7 +41,7 @@ public:
 	int GetRegionCount() const { return static_cast<int>(m_vecRegion.size()); }
 	st_Pos GetSpawnPos(int index);
 	int GetNearRegionIndex(st_Pos pos);
-	int GetEmptyRegion(const std::vector<int>& vec, st_Pos pos);
+	int GetNearRegion(const std::vector<int>& vec, st_Pos pos);
 	CPartsBase* GetPart(st_Pos pos);
 	int GetRegionIndex(st_Pos pos) { return m_vecMapStat[pos.Y][pos.X].iRegionIndex; }
 	eTeam GetRegionOccupyTeam(int regionindex) { return m_vecRegion[regionindex]->GetOccupyTeam(); }

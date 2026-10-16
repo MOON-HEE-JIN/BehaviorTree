@@ -85,6 +85,18 @@ public:
 	int Run(st_BlackBoard* bb) override;
 };
 
+class CBT_FindOtherOccupyRegion : public CBT_Condition
+{
+public:
+	int Run(st_BlackBoard* bb) override;
+};
+
+class CBT_FindLowCostRegion : public CBT_Condition
+{
+public:
+	int Run(st_BlackBoard* bb) override;
+};
+
 class CBT_FindPath : public CBT_Condition
 {
 public:
@@ -180,6 +192,12 @@ public:
 };
 
 class CBT_Attack : public CBT_Leaf
+{
+public:
+	int Run(st_BlackBoard* bb) override;
+};
+
+class CBT_TempOccpuyCombatNode : public CBT_Leaf
 {
 public:
 	int Run(st_BlackBoard* bb) override;

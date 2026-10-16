@@ -75,12 +75,20 @@ int CBT_FindNearRegion::Run(st_BlackBoard* bb)
 int CBT_FindPath::Run(st_BlackBoard* bb)
 {
     st_Pos goal;
+    if (bb->m_iRegionCostIndex != -1)
+    {
+        bb->m_pTeam->AddRegionOccupyCost(bb->m_iRegionCostIndex, false);
+        bb->m_iRegionCostIndex = -1;
+    }
+
     switch (bb->m_eAstarTargetType)
     {
 	case eAstarTargetType::None:
 		return eBTresult::Failed;
 	case eAstarTargetType::Region:
         goal = bb->m_stRegionCenterPos;
+        bb->m_pTeam->AddRegionOccupyCost(bb->m_iTargetRegionIndex);
+        bb->m_iRegionCostIndex = bb->m_iTargetRegionIndex;
 		break;
 	case eAstarTargetType::InRegionRandomPos:
 		goal = bb->m_stRegionInsidePos;
@@ -220,7 +228,7 @@ int CBT_FindEmptyOccupyRegion::Run(st_BlackBoard* bb)
     std::vector<int> vecRegionIndex;
     bb->m_pTeam->GetEmptyRegion(vecRegionIndex);
 
-	int index = bb->m_pMap->GetEmptyRegion(vecRegionIndex, bb->m_pEntity->GetPos());
+	int index = bb->m_pMap->GetNearRegion(vecRegionIndex, bb->m_pEntity->GetPos());
 
 	if (index == -1)
 		return eBTresult::Failed;
@@ -232,6 +240,42 @@ int CBT_FindEmptyOccupyRegion::Run(st_BlackBoard* bb)
     bb->m_stRegionCenterPos = pRegion->GetPos();
     bb->m_eAstarTargetType = eAstarTargetType::Region;
 
+    return eBTresult::Success;
+}
+
+int CBT_FindOtherOccupyRegion::Run(st_BlackBoard* bb)
+{
+    std::vector<int> vecRegionIndex;
+    bb->m_pTeam->GetOtherRegion(vecRegionIndex);
+
+    int index = bb->m_pMap->GetNearRegion(vecRegionIndex, bb->m_pEntity->GetPos());
+    
+    if (index == -1)
+        return eBTresult::Failed;
+
+    bb->m_iTargetRegionIndex = index;
+
+    CRegion* pRegion = bb->m_pMap->GetRegion(bb->m_iTargetRegionIndex);
+
+    bb->m_stRegionCenterPos = pRegion->GetPos();
+    bb->m_eAstarTargetType = eAstarTargetType::Region;
+
+    return eBTresult::Success;
+}
+
+int CBT_FindLowCostRegion::Run(st_BlackBoard* bb)
+{
+    int index = bb->m_pTeam->GetMinCostRegion();
+
+    CRegion* pRegion = bb->m_pMap->GetRegion(index);
+    if (pRegion == nullptr)
+        return eBTresult::Failed;
+
+    bb->m_iTargetRegionIndex = index;
+
+    bb->m_stRegionCenterPos = pRegion->GetPos();
+    bb->m_eAstarTargetType = eAstarTargetType::Region;
+    
     return eBTresult::Success;
 }
 
@@ -369,4 +413,10 @@ int CBT_IsAttack::Run(st_BlackBoard* bb)
 int CBT_Attack::Run(st_BlackBoard* bb)
 {
     return bb->m_pEntity->OnAttack(bb->m_iEnemyId);
+}
+
+int CBT_TempOccpuyCombatNode::Run(st_BlackBoard* bb)
+{
+    bb->m_pEntity->ChangeState(eState::Combat);
+    return eBTresult::Success;
 }

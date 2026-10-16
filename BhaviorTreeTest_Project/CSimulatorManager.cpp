@@ -22,10 +22,10 @@ CSimulatorManager::CSimulatorManager()
 
 	CTeam* pTeam = new CTeam(eTeam::None, 0);
 	m_vecTeam.push_back(pTeam);
-	CreateEntity(eTeam::Red, 1);
-	//CreateEntity(eTeam::Blue, 1);
+	CreateEntity(eTeam::Red, 5);
+	CreateEntity(eTeam::Blue, 5);
 
-	CreateScarecrow();
+	//CreateScarecrow();
 }
 
 CSimulatorManager::~CSimulatorManager()
@@ -93,11 +93,6 @@ void CSimulatorManager::Update()
 	}
 
 	m_updateTimerWheel.ClearCompleteData();
-
-	if (m_pMap->AllRegionOccupy())
-	{
-		printf("\n=== End Simulator ===\n");
-	}
 }
 
 void CSimulatorManager::Render(HDC hdc)
@@ -147,6 +142,8 @@ void CSimulatorManager::CreateEntity(eTeam team, int count)
 	{
 		CEntity* pEntity = new CEntity(team, m_iEntityId++);
 		st_Pos SpawnPos = m_pMap->GetSpawnPos((int)team);
+
+		SpawnPos.X -= 2 + i * 2;
 
 		pEntity->Init(SpawnPos);
 		pEntity->SetTeam(pTeam);

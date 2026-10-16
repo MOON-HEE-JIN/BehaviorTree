@@ -31,6 +31,9 @@ struct st_BlackBoard
 	st_Pos m_stRegionInsidePos;
 	st_Pos m_stEnemyPos;
 
+	int m_iRegionCostIndex = -1;
+
+
 	st_Pos m_stGoalPos;
 	void ResetRuntime()
 	{

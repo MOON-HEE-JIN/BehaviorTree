@@ -16,8 +16,8 @@ void CBehaviorManager::CreateEntityIdleTree()
 
 	m_idleTree.SetRoot(pSequenceRoot);
 	{
-		CBT_FindEmptyOccupyRegion* pNode = new CBT_FindEmptyOccupyRegion();
-		pSequenceRoot->Push(pNode);
+		CBT_FindLowCostRegion* pMinCostRegion = new CBT_FindLowCostRegion();
+		pSequenceRoot->Push(pMinCostRegion);
 	}
 	{
 		CBT_FindPath* pNode = new CBT_FindPath();
@@ -91,6 +91,9 @@ void CBehaviorManager::CreateEntityOccupyTree()
 
         // BT 규칙 검토: 적 존재 분기에 자식이 없어 전투나 대기 행동이 실행되지 않는다.
 		CBT_Selector* pSelectorEnemy = new CBT_Selector();
+		// 임시노드
+		CBT_TempOccpuyCombatNode* pTemp = new CBT_TempOccpuyCombatNode();
+		pSelectorEnemy->Push(pTemp);
 
 		pBranchRoot->Push(pSequenceNoEnemy);
 		pBranchRoot->Push(pSelectorEnemy);

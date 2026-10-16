@@ -11,14 +11,19 @@ public:
 private:
 	eTeam m_eTeam;
 	std::vector<eTeam> m_vecRegionOccupy;
+	std::vector<st_RegionCost> m_vecRegionOccupyCost;
 
 	int m_iMemberCount;
 	int m_iAliveCount;
 
 public:
-	eTeam GetTeam() const { return m_eTeam; }
-	void GetEmptyRegion(std::vector<int>& vec) const;
+	void OnOccupyRegion(int regionindex, eTeam team);
 
 	void AddMember() { m_iMemberCount++; m_iAliveCount++; }
-	void OnOccupyRegion(int regionindex, eTeam team);
+	void AddRegionOccupyCost(int regionindex, bool b = true);
+
+	eTeam GetTeam() const { return m_eTeam; }
+	void GetEmptyRegion(std::vector<int>& vec) const;
+	void GetOtherRegion(std::vector<int>& vec) const;
+	int GetMinCostRegion();
 };

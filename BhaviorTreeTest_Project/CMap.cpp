@@ -137,7 +137,7 @@ int CMap::GetNearRegionIndex(st_Pos pos)
     return bestIndex;
 }
 
-int CMap::GetEmptyRegion(const std::vector<int>& vec, st_Pos pos)
+int CMap::GetNearRegion(const std::vector<int>& vec, st_Pos pos)
 {
 	int min = 99999;
 	int ret = -1;
