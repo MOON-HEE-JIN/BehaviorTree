@@ -35,3 +35,9 @@ bool CDoor::Destory()
 {
     return true;
 }
+
+CDoor::~CDoor()
+{
+    DeleteObject(m_hOpenBrush);
+    DeleteObject(m_hCloseBrush);
+}

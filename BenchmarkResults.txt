@@ -1,0 +1,7 @@
+regions,operation,average_ns,p95_ns,p99_ns,max_ns
+64,reference_scan_sort_min,168.8,200,300,3700
+64,indexed_update_linear_min,89.7,100,100,13100
+256,reference_scan_sort_min,479,600,600,700
+256,indexed_update_linear_min,241.3,300,300,2000
+1024,reference_scan_sort_min,1869.8,2000,2800,60000
+1024,indexed_update_linear_min,909.1,900,1000,7200

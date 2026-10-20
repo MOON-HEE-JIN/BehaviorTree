@@ -3,6 +3,7 @@
 #include "CBaseObject.h"
 #include "UnionDefine.h"
 #include <vector>
+#include <unordered_map>
 
 class CPartsBase;
 class CEntity;
@@ -12,8 +13,14 @@ class CRegion :
 {
 public:
     CRegion(st_Rect rect, int RenderSize, int index);
-
-
+    ~CRegion() override;
+    int GetTeamCount(eTeam team) const;
+private:
+    std::unordered_map<CEntity*, eTeam> m_members;
+    int m_redCount = 0;
+    int m_blueCount = 0;
+    void RefreshOccupants();
+public:
     void AddParts(CPartsBase* pPart);
 
     // WinObject을(를) 통해 상속됨
@@ -28,6 +35,7 @@ private:
 
     int m_iRenderSize;
     int m_iIndex;
+    int m_iProgressValue = 3000;
     float m_fProgress = 0.0f;
 
     std::vector<CPartsBase*> m_vecRenderParts;

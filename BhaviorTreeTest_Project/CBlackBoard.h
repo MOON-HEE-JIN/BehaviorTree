@@ -2,6 +2,8 @@
 
 #include "Defines.h"
 #include <unordered_map>
+#include <vector>
+#include <cstdint>
 
 class CEntity;
 class CMap;
@@ -26,6 +28,8 @@ struct st_BlackBoard
 	int m_iTargetRegionIndex = -1;
 	int m_iOccupyRegionIndex = -1;
 	int m_iEnemyId = -1;
+	int m_reservedRegion = -1;
+	std::uint64_t m_runtimeGeneration = 0;
 
 	st_Pos m_stRegionCenterPos;
 	st_Pos m_stRegionInsidePos;
@@ -34,6 +38,7 @@ struct st_BlackBoard
 	st_Pos m_stGoalPos;
 	void ResetRuntime()
 	{
+		++m_runtimeGeneration;
 		m_mapRuntime.clear();
 	}
 

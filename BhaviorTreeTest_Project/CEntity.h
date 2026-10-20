@@ -13,7 +13,7 @@ class CEntity :
 {
 public:
     CEntity(eTeam team, int id);
-    ~CEntity() override = default;
+    ~CEntity() override;
 
 private:
     eTeam m_eTeam;
@@ -31,7 +31,7 @@ private:
     void RenderDetection(HDC hdc);
 public:
     // CBaseObject을(를) 통해 상속됨
-    void Init(st_Pos& spawnpos) override;
+    void Init(st_Pos spawnpos) override;
     void Update() override;
     void Render(HDC hdc) override;
     void Render_Layer_01(HDC hdc) override;
@@ -48,6 +48,8 @@ public:
 
     void SetTeam(CTeam* pTeam) { m_ai.SetTeam(pTeam); }
 
+    void ClearMovePath();
+    int GetCurrentRegionIndex() const { return m_iCurrentRegionIndex; }
     void InitAstarPathtoMovePath();
     void ChangeState(eState state);
 

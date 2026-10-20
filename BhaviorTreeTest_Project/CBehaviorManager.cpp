@@ -52,7 +52,7 @@ void CBehaviorManager::CreateEntityCombatTree()
 		pAttackRoot->SetCondition(pIsAttack);
 		{
 			// 공격 실패시 이동
-			CBT_Sequence* pFSequence = new CBT_Sequence();
+			CBT_Sequence* pFSequence = new CBT_Sequence(true);
 			CBT_FindPath* pFindPath = new CBT_FindPath();
 			pFSequence->Push(pFindPath);
 			pFSequence->Push(CreateCombatMoveSelector());
@@ -89,8 +89,7 @@ void CBehaviorManager::CreateEntityOccupyTree()
 		pSequenceNoEnemy->Push(CreateMoveSelector());
 		pSequenceNoEnemy->Push(pOccupy);
 
-        // BT 규칙 검토: 적 존재 분기에 자식이 없어 전투나 대기 행동이 실행되지 않는다.
-		CBT_Selector* pSelectorEnemy = new CBT_Selector();
+        CBT_Selector* pSelectorEnemy = new CBT_Selector();
 
 		pBranchRoot->Push(pSequenceNoEnemy);
 		pBranchRoot->Push(pSelectorEnemy);
@@ -110,7 +109,7 @@ CBT_MoveSelector* CBehaviorManager::CreateMoveSelector()
 	pSequenceDoor->Push(pCheckDoor);
 	pSequenceDoor->Push(pOpenDoor);
 
-	CBT_Sequence* pSequenceMove = new CBT_Sequence();
+	CBT_Sequence* pSequenceMove = new CBT_Sequence(true);
 	CBT_IsMove* pIsMove = new CBT_IsMove();
 	CBT_IsEnemyNearMoveTree* pIsEnemy = new CBT_IsEnemyNearMoveTree();
 	CBT_Move* pMove = new CBT_Move();
@@ -136,8 +135,8 @@ CBT_MoveSelector* CBehaviorManager::CreateCombatMoveSelector()
 
 	pSequenceDoor->Push(pCheckDoor);
 	pSequenceDoor->Push(pOpenDoor);
-
-	CBT_Sequence* pSequenceMove = new CBT_Sequence();
+	
+	CBT_Sequence* pSequenceMove = new CBT_Sequence(true);
 	CBT_IsMove* pIsMove = new CBT_IsMove();
 	CBT_Move* pMove = new CBT_Move();
 

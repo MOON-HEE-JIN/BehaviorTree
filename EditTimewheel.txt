@@ -1,0 +1,73 @@
+행동트리 지역 점령 시뮬레이션 — Time Wheel 별도 분석
+분석 기준: 현재 HEAD 273bc06, 참고 feature/tree_adjust_/edit_codex 96ba862
+범위: CTimerWheel.h/.cpp, CTimerWheelManager.h/.cpp, st_TimerWheel 선언 참조.
+내부 소스, 시그니처, 자료구조 및 알고리즘은 변경하지 않았다.
+
+[T1] High — CTimerWheelManager::~CTimerWheelManager / CTimerWheel::~CTimerWheel
+문제: 두 소멸자가 비어 있다. Manager가 new한 각 CTimerWheel을 delete하지 않아
+Wheel 객체와 슬롯 list/vector가 누수된다. payload 소유권 계약도 내부에 없다.
+조건: 시뮬레이터 생성/해제 반복, 종료 시 아직 예약된 이벤트 존재.
+영향: 장시간 서버에서 지속적인 메모리 누적.
+수정 방안: Manager가 Wheel을 unique_ptr로 소유하고, payload는 호출자가 소유하는
+비소유 참조인지 Wheel이 소유하는지 계약을 먼저 확정한다. cancel-all/drain API 필요.
+연관 영향: 이번 CSimulatorManager는 자신의 payload만 unique_ptr로 소유/회수한다.
+이는 Wheel 내부 객체/슬롯 누수를 해결하지 않는다. 향후 내부 소유권 변경 시
+동일 payload를 이중 해제하지 않도록 호출자 계약도 함께 갱신해야 한다.
+검증: CRT leak dump 또는 누수 검사기로 반복 생성/해제 후 잔존 할당 확인.
+이번 MSVC ASan 성공은 누수 부재의 증거가 아니다. 내부 누수는 정적 분석으로 확인.
+
+[T2] High — CTimerWheel::Push / RePush / Replace / Update
+문제: TotalTimer/m_iTick을 내림하고, RemaindTime에는 요청의 나머지 시간이 아닌
+현재 m_iUpdateTick을 저장한다. 상위 Wheel에서 RemaindTime>500인 경우에만 하위
+재배치를 하므로 요청 시각/나머지 보존과 만료 정확성을 보장하지 못한다.
+예: 1000ms Wheel의 phase=0에서 1500ms 등록은 checkTick=1, RemaindTime=0이므로
+약 1000ms 후 완료될 수 있다. delay=0이면 현재 슬롯에 들어가 한 바퀴 지연될 수 있다.
+영향: 조기/지연 콜백, 주기 이벤트 드리프트, 점령 시간과 실제 시간 불일치.
+수정 방안: 절대 만료 Tick과 단조 시계를 기준으로 슬롯 및 남은 시간을 계산.
+계층 cascade 순서/경계도 명세화하고 만료 전 실행 금지 불변식 적용.
+연관 영향: Region은 이제 논리 Tick 100ms만큼 진행하지만 Wheel의 실제 전달 오차는
+여전히 존재한다. 호출부에서 별도 보정 스케줄러로 감추지 않았다.
+검증: fake clock 기반 0,1,999,1000,1001,1499,1500,60000,60001ms를 모든 phase에서 검사.
+이번 테스트는 실제 완료 배치 차단을 검사했으며 전체 타이밍 행렬은 미실행.
+
+[T3] High — CTimerWheelManager::Update
+문제: _DEBUG에서 누적 정수 ms가 10을 초과하면 nLoop=10으로 자르지만 초과분은
+잔여 시간에 돌려놓지 않는다. 디버그 정지나 긴 Tick 뒤 경과 시간이 유실된다.
+Release는 반대로 경과 ms만큼 제한 없이 반복하므로 긴 중단 후 지연 스파이크가 생긴다.
+수정 방안: 미처리 backlog를 보존하고 처리 예산/시간 건너뛰기 정책을 명시한다.
+연관 영향: Debug와 Release의 결과 시점과 부하 특성이 달라질 수 있다.
+검증: 1ms/16ms/1000ms 경과를 주입하고 누적 논리 시간 및 만료 수 비교. 미실행.
+
+[T4] High — CTimerWheelManager::Replace / ChangeTime
+문제: 남은 시간을 unsigned int로 계산하므로 이미 만료되었거나 subTime이 잔여량보다
+큰 경우 underflow된다. RemaindTime<=0 조건은 음수를 검출하지 못한다.
+조건: 남은 시간보다 큰 시간 차감, 늦게 처리된 이벤트의 재조정.
+영향: 즉시 실행되어야 할 이벤트가 매우 먼 미래로 이동하거나 Push 범위를 넘는다.
+수정 방안: 충분히 넓은 signed 정수와 단조 시계 차분으로 계산하고 0 이하를 완료 처리.
+연관 영향: 쿨타임/스킬 지속시간 이벤트의 변경 API 사용 전 검증 필요.
+검증: 만료 전후, 잔여-1/잔여/잔여+1 차감, GetTickCount wrap 경계. 미실행.
+
+[T5] High — CTimerWheelManager::Push / Pop / CTimerWheel::Pop
+문제: 최대 범위를 넘는 요청은 반환 상태 없이 버린다. 동일 포인터 중복 Push 허용,
+Pop은 데이터의 현재 TotalTimer로 Wheel을 추정하고 Index를 경계 검사 없이 사용한다.
+완료 벡터로 옮겨진 이벤트의 취소/완료 상태를 구분하는 명시적 핸들도 없다.
+영향: 유실 이벤트, 취소 실패, 중복 실행, 호출자 delete와 충돌 시 dangling pointer.
+수정 방안: 등록 결과/타이머 핸들/등록 세대/상태를 정의하고 일관된 cancel 계약을 제공.
+연관 영향: 이번 시뮬레이터 진입점은 같은 payload의 이중 등록을 차단한다.
+Wheel을 직접 사용하는 다른 호출자에는 이 보호가 적용되지 않는다.
+검증: 범위 초과/음수/중복/완료 직전 취소/콜백 중 취소 시나리오. 내부 API 행렬 미실행.
+
+[T6] High(멀티스레드 사용 시) — 전체 list/vector 조작
+문제: Push/Pop/Update와 완료 데이터가 동기화되지 않는다. 현재 호출은 로직 스레드가
+소유하므로 내부에 별도 락을 추가하지 않았다. 향후 다른 스레드 등록은 안전하지 않다.
+수정 방안: 단일 소유 스레드 + 명령 큐를 우선 검토하고 핸들 기반 취소를 결합한다.
+연관 영향: 이번 Render/Update 잠금은 시뮬레이터 렌더링 경합만 해결하며 범용 Wheel의
+스레드 안전성을 보증하지 않는다.
+검증: 다중 생산자 등록/취소와 단일 소비자 Update, 이벤트별 정확히 한 번 실행 확인.
+
+[종료 연동 검증]
+CSimulatorManager는 콜백 실행 전 객체 활성 상태를 검사하고 각 콜백 직후 종료 조건을
+확인한다. 종료 이후 동일 완료 배치의 나머지 콜백과 신규 등록 및 재예약을 차단한다.
+회귀 테스트에서 마지막 생존자를 죽이는 이벤트 다음 콜백이 실행되지 않음을 확인했다.
+종료 후 Wheel Update는 호출하지 않으며 payload는 Simulator 소멸 때 해제한다.
+실행되지 않은 잔여 슬롯을 Wheel 내부에서 완전히 비우는 개선은 T1의 별도 작업이다.

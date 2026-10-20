@@ -16,6 +16,7 @@ protected:
 
 public:
 	void Push(CBTNode* pNode) { m_vecChild.push_back(pNode); }
+	void ResetSubtree(st_BlackBoard* bb);
 };
 
 class CBehaviorTree
@@ -41,7 +42,10 @@ public:
 class CBT_Sequence : public CBTNode
 {
 public:
+	explicit CBT_Sequence(bool reactive = false) : m_reactive(reactive) {}
 	int Run(st_BlackBoard* bb) override;
+private:
+	const bool m_reactive;
 };
 
 class CBT_ConditionBranch : public CBTNode
@@ -80,6 +84,12 @@ public:
 };
 
 class CBT_FindEmptyOccupyRegion : public CBT_Condition
+{
+public:
+	int Run(st_BlackBoard* bb) override;
+};
+
+class CBT_FindLowCostOccupyRegion : public CBT_Condition
 {
 public:
 	int Run(st_BlackBoard* bb) override;

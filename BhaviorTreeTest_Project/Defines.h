@@ -49,6 +49,7 @@ enum eTUpdateType
 	Object,
 	CoolTime,
 	DuringTime,
+	Event,
 	End,
 };
 
