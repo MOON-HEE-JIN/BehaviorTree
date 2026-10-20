@@ -2,6 +2,7 @@
 #pragma warning(disable : 4996)
 #pragma comment (lib, "winmm.lib")
 #include <process.h>
+#include <atomic>
 #include "WinThread.h"
 #include "UnionDefine.h"
 
@@ -14,6 +15,7 @@ HBRUSH g_BRUSH_BG;
 using namespace Gdiplus;
 
 static HANDLE hLogic;
+static std::atomic<bool> g_stop{false};
 
 HANDLE StartWinAPIThread()
 {
@@ -74,6 +76,7 @@ unsigned int __stdcall WinAPIThread(void* arg)
 		DispatchMessage(&msg);
 	}
 	timeEndPeriod(1);
+	DeleteObject(g_BRUSH_BG);
 	GdiplusShutdown(gdiplusToken);
 	return 0;
 }
@@ -89,12 +92,36 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_CREATE:
 	{
-		g_SimulatorManager = new CSimulatorManager;
+		try 
+		{ 
+			g_SimulatorManager = new CSimulatorManager;
+		}
+        catch (const std::exception& error) 
+		{
+			MessageBoxA(hwnd, error.what(), "Simulator initialization failed", MB_OK);
+			exit(1);
+
+			return -1;
+		}
+
+        StartLogicThread();
 		SetTimer(hwnd, 1, 15, NULL);
 		return 0;
 	}
 	case WM_DESTROY:
-		PostQuitMessage(0);
+		KillTimer(hwnd, 1);
+        
+		g_stop.store(true);
+        
+		if (hLogic) 
+		{ 
+			WaitForSingleObject(hLogic, INFINITE);
+			CloseHandle(hLogic);
+			hLogic = nullptr;
+		}
+        delete g_SimulatorManager;
+        g_SimulatorManager = nullptr;
+        PostQuitMessage(0);
 		return 0;
 	case WM_TIMER:
 	{
@@ -148,11 +175,12 @@ unsigned int __stdcall WinApiLogicThread(void* arg)
 {
 	timeBeginPeriod(1);
 	int ret = 0;
-	while (1)
-	{
-		ret = WaitForSingleObject(hLogic, 1);
-		g_SimulatorManager->Update();
-	}
+
+    while (!g_stop.load())
+    {
+        Sleep(1);
+        g_SimulatorManager->Update();
+    }
 	timeEndPeriod(1);
 	return 0;
 }

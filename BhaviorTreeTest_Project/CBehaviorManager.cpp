@@ -16,8 +16,8 @@ void CBehaviorManager::CreateEntityIdleTree()
 
 	m_idleTree.SetRoot(pSequenceRoot);
 	{
-		CBT_FindLowCostRegion* pMinCostRegion = new CBT_FindLowCostRegion();
-		pSequenceRoot->Push(pMinCostRegion);
+		CBT_FindEmptyOccupyRegion* pNode = new CBT_FindEmptyOccupyRegion();
+		pSequenceRoot->Push(pNode);
 	}
 	{
 		CBT_FindPath* pNode = new CBT_FindPath();
@@ -43,7 +43,29 @@ void CBehaviorManager::CreateEntityCombatTree()
 	}
 	{
 		// eBTresult::Success
-		pBranchRoot->Push(CreateAttackSequence(nullptr));
+		CBT_Sequence* pSequence = new CBT_Sequence();
+		CBT_SetEnemyTarget* pSetTarget = new CBT_SetEnemyTarget();
+		pSequence->Push(pSetTarget);
+
+		CBT_ConditionBranch* pAttackRoot = new CBT_ConditionBranch();
+		CBT_IsAttack* pIsAttack = new CBT_IsAttack();
+		pAttackRoot->SetCondition(pIsAttack);
+		{
+			// 공격 실패시 이동
+			CBT_Sequence* pFSequence = new CBT_Sequence(true);
+			CBT_FindPath* pFindPath = new CBT_FindPath();
+			pFSequence->Push(pFindPath);
+			pFSequence->Push(CreateCombatMoveSelector());
+			pAttackRoot->Push(pFSequence);
+		}
+		{
+			// 공격 판정 성공
+			CBT_Attack* pAttack = new CBT_Attack();
+			pAttackRoot->Push(pAttack);
+		}
+		pSequence->Push(pAttackRoot);
+
+		pBranchRoot->Push(pSequence);
 	}
 
 }
@@ -67,14 +89,10 @@ void CBehaviorManager::CreateEntityOccupyTree()
 		pSequenceNoEnemy->Push(CreateMoveSelector());
 		pSequenceNoEnemy->Push(pOccupy);
 
-		CBT_Sequence* pSequenceEnemy = new CBT_Sequence();
-		CBT_DectectionRegionEnemy* pDetectionRegion = new CBT_DectectionRegionEnemy();
+        CBT_Selector* pSelectorEnemy = new CBT_Selector();
 
-		pSequenceEnemy->Push(pDetectionRegion);
-		pSequenceEnemy->Push(CreateAttackSequence(new CBT_SetRegionEnemyTarget()));
-		
 		pBranchRoot->Push(pSequenceNoEnemy);
-		pBranchRoot->Push(pSequenceEnemy);
+		pBranchRoot->Push(pSelectorEnemy);
 	}
 }
 
@@ -91,7 +109,7 @@ CBT_MoveSelector* CBehaviorManager::CreateMoveSelector()
 	pSequenceDoor->Push(pCheckDoor);
 	pSequenceDoor->Push(pOpenDoor);
 
-	CBT_Sequence* pSequenceMove = new CBT_Sequence();
+	CBT_Sequence* pSequenceMove = new CBT_Sequence(true);
 	CBT_IsMove* pIsMove = new CBT_IsMove();
 	CBT_IsEnemyNearMoveTree* pIsEnemy = new CBT_IsEnemyNearMoveTree();
 	CBT_Move* pMove = new CBT_Move();
@@ -117,8 +135,8 @@ CBT_MoveSelector* CBehaviorManager::CreateCombatMoveSelector()
 
 	pSequenceDoor->Push(pCheckDoor);
 	pSequenceDoor->Push(pOpenDoor);
-
-	CBT_Sequence* pSequenceMove = new CBT_Sequence();
+	
+	CBT_Sequence* pSequenceMove = new CBT_Sequence(true);
 	CBT_IsMove* pIsMove = new CBT_IsMove();
 	CBT_Move* pMove = new CBT_Move();
 
@@ -131,33 +149,3 @@ CBT_MoveSelector* CBehaviorManager::CreateCombatMoveSelector()
 	}
 	return pMoveSelector;
 }
-
-CBT_Sequence* CBehaviorManager::CreateAttackSequence(CBT_Condition* pSetTarget)
-{
-	CBT_Sequence* pSequence = new CBT_Sequence();
-	
-	if(pSetTarget == nullptr)
-		pSetTarget = new CBT_SetEnemyTarget();
-	pSequence->Push(pSetTarget);
-
-	CBT_ConditionBranch* pAttackRoot = new CBT_ConditionBranch();
-	CBT_IsAttack* pIsAttack = new CBT_IsAttack();
-	pAttackRoot->SetCondition(pIsAttack);
-	{
-		// 공격 실패시 이동
-		CBT_Sequence* pFSequence = new CBT_Sequence();
-		CBT_FindPath* pFindPath = new CBT_FindPath();
-		pFSequence->Push(pFindPath);
-		pFSequence->Push(CreateCombatMoveSelector());
-		pAttackRoot->Push(pFSequence);
-	}
-	{
-		// 공격 판정 성공
-		CBT_Attack* pAttack = new CBT_Attack();
-		pAttackRoot->Push(pAttack);
-	}
-	pSequence->Push(pAttackRoot);
-
-	return pSequence;
-}
-

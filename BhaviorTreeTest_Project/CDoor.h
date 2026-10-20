@@ -5,6 +5,7 @@ class CDoor : public CPartsBase
 {
 public:
 	CDoor();
+	~CDoor() override;
 private:
 	bool m_bOpen;
 

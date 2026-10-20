@@ -7,11 +7,19 @@
 
 #include <unordered_map>
 #include <list>
+#include <memory>
+#include <mutex>
 
 class CSimulatorManager : public WinObject
 {
 public:
-	CSimulatorManager();
+    enum class EndReason { None, AllRegionsCaptured, NoLivingEntities };
+    struct Result { EndReason reason = EndReason::None; int red = 0; int blue = 0; eTeam winner = eTeam::None; };
+    
+	explicit CSimulatorManager(int redCount = 5, int blueCount = 5, bool scarecrows = false);
+    bool IsFinished() const { return m_result.reason != EndReason::None; }
+    const Result& GetResult() const { return m_result; }
+    void CheckEndCondition();
 	~CSimulatorManager();
 
 private:
@@ -24,7 +32,11 @@ private:
 
 	CTimerWheelManager m_updateTimerWheel;
 
-	int m_iEntityId;
+    int m_iEntityId;
+    Result m_result;
+    std::recursive_mutex m_stateMutex;
+    std::unordered_map<TWHEEL*, std::unique_ptr<TWHEEL>> m_events;
+    void Finish(EndReason reason);
 public:
 	void NewUpdatePushTimerWheel(TWHEEL* pTweel);
 	void NotifyOccupyRegion(int index, eTeam team);

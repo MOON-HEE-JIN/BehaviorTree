@@ -8,6 +8,7 @@
 #include <vector>
 #include <algorithm>
 #include <climits>
+#include <stdexcept>
 
 #include "CDoor.h"
 
@@ -21,20 +22,27 @@ CMap::CMap()
 	g_BlackPen = (HPEN)CreatePen(BS_SOLID, 1, RGB(0, 0, 0));
 
 	std::ifstream fp("SimulatorMap.txt");
+	
 	if (!fp.is_open())
-		printf("Failed OPEN MAP\n");
+		throw std::runtime_error("Failed OPEN SimulatorMap.txt");
 
 	std::string line;
 
 	for (int y = 0; y < MAP_SIZE_WH; y++)
 	{
-		std::getline(fp, line);
+		if (!std::getline(fp, line))
+			throw std::runtime_error("Map has fewer than 128 rows");
 
 		std::stringstream ss(line);
 		std::string token;
 		for (int x = 0; x < MAP_SIZE_WH; x++)
 		{
-			std::getline(ss, token, ',');
+			if (!std::getline(ss, token, ','))
+				throw std::runtime_error("Map row has fewer than 128 cells");
+
+            if (token.size() != 1 || token[0] < '0' || token[0] > '3')
+				throw std::runtime_error("Invalid map cell");
+			
 			m_vecMapStat[y][x].iType = atoi(token.c_str());
 			int iType = m_vecMapStat[y][x].iType;
 
@@ -66,6 +74,8 @@ CMap::CMap()
 
 CMap::~CMap()
 {
+    for (auto& part : m_mapParts) delete part.second;
+    DeleteObject(g_BlackPen);
 	int nLoop = m_vecRegion.size();
 	for (int i = 0; i < nLoop; i++)
 	{
@@ -137,7 +147,7 @@ int CMap::GetNearRegionIndex(st_Pos pos)
     return bestIndex;
 }
 
-int CMap::GetNearRegion(const std::vector<int>& vec, st_Pos pos)
+int CMap::GetEmptyRegion(const std::vector<int>& vec, st_Pos pos)
 {
 	int min = 99999;
 	int ret = -1;
@@ -172,18 +182,6 @@ int CMap::GetRegionOppositeCount(int regionindex)
 	return pRegion->GetOppositeCount();
 }
 
-int CMap::GetRegionOccupyTeamEntitys(int regionindex, eTeam team, std::vector<CEntity*>& vec)
-{
-
-	return 0;
-}
-
-const std::vector<CEntity*>& CMap::GetRegionTeamEntitys(eTeam team, int regionindex) const
-{
-	// TODO: 여기에 return 문을 삽입합니다.
-	return m_vecRegion[regionindex]->GetTeamEntitys(team);
-}
-
 bool CMap::FindShape(int sX, int sY, st_Rect& region, std::vector<st_Part>& vecParts)
 {
 	bool bSearch = false;
@@ -197,7 +195,7 @@ bool CMap::FindShape(int sX, int sY, st_Rect& region, std::vector<st_Part>& vecP
 			vecParts.push_back(part);
 		}
 		//┐  찾기
-		if (m_vecMapStat[sY][iX].iType == eSTAT_TYPE::None &&
+		if (iX > 0 && m_vecMapStat[sY][iX].iType == eSTAT_TYPE::None &&
 			m_vecMapStat[sY][iX - 1].bIsBuildWall == true)
 		{
 			break;
@@ -205,6 +203,8 @@ bool CMap::FindShape(int sX, int sY, st_Rect& region, std::vector<st_Part>& vecP
 	}
 
 	iX--;
+    if (iX < 1 || sY + 1 >= MAP_SIZE_WH)
+		return false;
 	if (
 		m_vecMapStat[sY][iX].bIsBuildWall == true &&
 		m_vecMapStat[sY][iX - 1].bIsBuildWall == true &&
@@ -235,6 +235,7 @@ bool CMap::FindShape(int sX, int sY, st_Rect& region, std::vector<st_Part>& vecP
 	}
 
 	iY--;
+    if (iY < 1) return false;
 	if (
 		m_vecMapStat[iY][iX].bIsBuildWall == true &&
 		m_vecMapStat[iY][iX - 1].bIsBuildWall == true &&
@@ -266,6 +267,7 @@ bool CMap::FindShape(int sX, int sY, st_Rect& region, std::vector<st_Part>& vecP
 	}
 
 	iX++;
+    if (iX + 1 >= MAP_SIZE_WH) return false;
 	if (
 		m_vecMapStat[iY][iX].bIsBuildWall == true &&
 		m_vecMapStat[iY][iX + 1].bIsBuildWall == true &&
@@ -365,7 +367,13 @@ void CMap::AddPart(std::vector<st_Part>& vec, int regionindex)
 			pPart->SetPos(vec[i].pos);
 
 			__int64 key = ((__int64)vec[i].pos.Y << 32 | vec[i].pos.X);
-			m_mapParts.insert(std::make_pair(key, pPart));
+
+            const auto inserted = m_mapParts.emplace(key, pPart);
+            if (!inserted.second) 
+			{ 
+				delete pPart;
+				pPart = inserted.first->second;
+			}
 
 			m_vecRegion[regionindex]->AddParts(pPart);
 		}

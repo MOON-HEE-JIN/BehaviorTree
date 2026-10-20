@@ -41,13 +41,11 @@ public:
 	int GetRegionCount() const { return static_cast<int>(m_vecRegion.size()); }
 	st_Pos GetSpawnPos(int index);
 	int GetNearRegionIndex(st_Pos pos);
-	int GetNearRegion(const std::vector<int>& vec, st_Pos pos);
+	int GetEmptyRegion(const std::vector<int>& vec, st_Pos pos);
 	CPartsBase* GetPart(st_Pos pos);
-	int GetRegionIndex(st_Pos pos) { return m_vecMapStat[pos.Y][pos.X].iRegionIndex; }
+	int GetRegionIndex(st_Pos pos) { return pos.X >= 0 && pos.Y >= 0 && pos.X < MAP_SIZE_WH && pos.Y < MAP_SIZE_WH ? m_vecMapStat[pos.Y][pos.X].iRegionIndex : -1; }
 	eTeam GetRegionOccupyTeam(int regionindex) { return m_vecRegion[regionindex]->GetOccupyTeam(); }
 	int GetRegionOppositeCount(int regionindex);
-	int GetRegionOccupyTeamEntitys(int regionindex, eTeam team, std::vector<CEntity*>& vec);
-	const std::vector<CEntity*>& GetRegionTeamEntitys(eTeam team, int regionindex) const;
 
 private:
 	void RenderGrid(HDC hdc);

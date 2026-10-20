@@ -13,8 +13,14 @@ class CRegion :
 {
 public:
     CRegion(st_Rect rect, int RenderSize, int index);
-
-
+    ~CRegion() override;
+    int GetTeamCount(eTeam team) const;
+private:
+    std::unordered_map<CEntity*, eTeam> m_members;
+    int m_redCount = 0;
+    int m_blueCount = 0;
+    void RefreshOccupants();
+public:
     void AddParts(CPartsBase* pPart);
 
     // WinObject을(를) 통해 상속됨
@@ -29,11 +35,10 @@ private:
 
     int m_iRenderSize;
     int m_iIndex;
+    int m_iProgressValue = 3000;
     float m_fProgress = 0.0f;
 
     std::vector<CPartsBase*> m_vecRenderParts;
-    std::unordered_map<eTeam, std::vector<CEntity*>> m_mapTeamEntity;
-
 public:
     int GetRegionIndex() const { return m_iIndex; }
     eTeam GetOccupyTeam() const { return m_eOccupyTeam; }
@@ -44,8 +49,6 @@ public:
 
 	int GetOccupyTeamCount() const { return m_iOccupyTeamCount; }
 	int GetOppositeCount() const { return m_iOppositeCount; }
-
-    const std::vector<CEntity*>& GetTeamEntitys(eTeam team) { return m_mapTeamEntity[team]; }
 public:
     void EnterRegion(eTeam team, CEntity* pObj);           // 지역 들어가기
     void ExitRegion(eTeam team, CEntity* pObj);            // 지역 나가기

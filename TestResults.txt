@@ -1,0 +1,19 @@
+Validation date: 2026-10-20 (Asia/Seoul)
+Compiler: MSVC 14.51.36231 x64; C++17; /MDd /Zi /Od /fsanitize=address
+Seed: __FIX_SEED__ => mt19937(19937); test executable in independent processes
+Native GUI executable: compiled/linked; interactive window lifecycle not exercised
+MSBuild: blocked by FileTracker E_ACCESSDENIED; direct installed MSVC used instead
+Run 1: exit=0, elapsed=0.554s, stdout_sha256=d8cb81ace96c04cbb01a7ba2eeb49d2ae5ee5e881caf36388a7c68f14342d83d
+FULL SIMULATION: reason=1 red=6 blue=3
+PASS: 47 regression checks
+Run 2: exit=0, elapsed=0.532s, stdout_sha256=d8cb81ace96c04cbb01a7ba2eeb49d2ae5ee5e881caf36388a7c68f14342d83d
+FULL SIMULATION: reason=1 red=6 blue=3
+PASS: 47 regression checks
+Independent executions: identical full stdout; ASan reports: none on exercised inputs
+Protected file unchanged: BhaviorTreeTest_Project/CAstar.h
+Protected file unchanged: BhaviorTreeTest_Project/CAstar.cpp
+Protected file unchanged: BhaviorTreeTest_Project/CTimerWheel.h
+Protected file unchanged: BhaviorTreeTest_Project/CTimerWheel.cpp
+Protected file unchanged: BhaviorTreeTest_Project/CTimerWheelManager.h
+Protected file unchanged: BhaviorTreeTest_Project/CTimerWheelManager.cpp
+Not exercised: Astar isolated-start crash, optimality oracle, full timer boundary matrix, CRT leaks, UBSan/TSan, GUI stress, whole Tick p95/p99/allocation counters.

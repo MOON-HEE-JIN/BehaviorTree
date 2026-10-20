@@ -17,6 +17,10 @@ public:
 
 	CMap* GetMap() const { return m_blackBoard.m_pMap; }
     CTeam* GetTeam() const { return m_blackBoard.m_pTeam; }
+
     void ResetRuntime() { m_blackBoard.ResetRuntime(); }
+    void CancelAction();
+    void ReleaseReservation();
+    void ReserveRegion(int index);
     void SetOccupyRegionIndex(int index) { m_blackBoard.m_iOccupyRegionIndex = index; }
 };
