@@ -15,7 +15,7 @@ private:
     int m_iRenderAttackRangeSize = 0;
 public:
     int GetId() const { return m_iID; }
-    virtual void Init(st_Pos spawnpos) {}
+    virtual void Init(st_Pos& spawnpos) {}
     virtual void OnSpawn() {}
     virtual int OnAttack(int id) { return 0; };
     virtual int OnDamage(int id, int damage) { return 0; };

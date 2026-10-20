@@ -6,68 +6,64 @@
 #include "CDoor.h"
 #include "CTeam.h"
 
+
 int CBT_Selector::Run(st_BlackBoard* bb)
 {
-    int currentIndex = 0;
-
-    const auto runtime = bb->m_mapRuntime.find(this);
-    if (runtime != bb->m_mapRuntime.end())
-        currentIndex = runtime->second.m_iCurrentIndex;
-
-    int ret = 0;
-
-    int nLoop = m_vecChild.size();
-    for (int i = currentIndex; i < nLoop; i++)
+    const auto generation = bb->m_runtimeGeneration;
+    
+    const auto it = bb->m_mapRuntime.find(this);
+    int start = it == bb->m_mapRuntime.end() ? 0 : it->second.m_iCurrentIndex;
+    
+    for (int i = start; i < static_cast<int>(m_vecChild.size()); ++i)
     {
-        ret = m_vecChild[i]->Run(bb);
-
-		if (ret == eBTresult::Running)
-		{
-            bb->PushRuntime(this, st_RuntimeNodeInfo{ i });
-			break;
-		}
+        const int result = m_vecChild[i]->Run(bb);
+        
+        if (generation != bb->m_runtimeGeneration)
+            return eBTresult::Failed;
+        
+        if (result == eBTresult::Running)
+        { 
+            bb->PushRuntime(this, {i});
+            return result;
+        }
+        else if (result == eBTresult::Success)
+        { 
+            ResetSubtree(bb);
+            return result;
+        }
     }
-
-    if (ret == eBTresult::Success)
-    {
-        if (runtime != bb->m_mapRuntime.end())
-            bb->m_mapRuntime.erase(runtime);
-    }
-
-    return ret;
+    
+    ResetSubtree(bb);
+    return eBTresult::Failed;
 }
 
 int CBT_Sequence::Run(st_BlackBoard* bb)
 {
-    int currentIndex = 0;
-
-    const auto runtime = bb->m_mapRuntime.find(this);
-    if (runtime != bb->m_mapRuntime.end())
-        currentIndex = runtime->second.m_iCurrentIndex;
-
-    int ret = 0;
-
-    int nLoop = m_vecChild.size();
-    for (int i = currentIndex; i < nLoop; i++)
+    const auto generation = bb->m_runtimeGeneration;
+    
+    const auto it = bb->m_mapRuntime.find(this);
+    int start = m_reactive || it == bb->m_mapRuntime.end() ? 0 : it->second.m_iCurrentIndex;
+    for (int i = start; i < static_cast<int>(m_vecChild.size()); ++i)
     {
-        ret = m_vecChild[i]->Run(bb);
+        const int result = m_vecChild[i]->Run(bb);
 
-		if (ret == eBTresult::Failed)
-			break;
-        else if (ret == eBTresult::Running)
+        if (generation != bb->m_runtimeGeneration)
+            return eBTresult::Failed;
+        
+        if (result == eBTresult::Running)
         {
-			bb->PushRuntime(this, st_RuntimeNodeInfo{ i });
-            break;
+            bb->PushRuntime(this, {i});
+            return result;
+        }
+        else if (result != eBTresult::Success) 
+        {
+            ResetSubtree(bb);
+            return eBTresult::Failed;
         }
     }
-    
-    if (ret == eBTresult::Success)
-    {
-        if (runtime != bb->m_mapRuntime.end())
-            bb->m_mapRuntime.erase(runtime);
-    }
 
-    return ret;
+    ResetSubtree(bb);
+    return eBTresult::Success;
 }
 
 int CBT_FindNearRegion::Run(st_BlackBoard* bb)
@@ -87,20 +83,12 @@ int CBT_FindNearRegion::Run(st_BlackBoard* bb)
 int CBT_FindPath::Run(st_BlackBoard* bb)
 {
     st_Pos goal;
-    if (bb->m_iRegionCostIndex != -1)
-    {
-        bb->m_pTeam->AddRegionOccupyCost(bb->m_iRegionCostIndex, -10);
-        bb->m_iRegionCostIndex = -1;
-    }
-
     switch (bb->m_eAstarTargetType)
     {
 	case eAstarTargetType::None:
 		return eBTresult::Failed;
 	case eAstarTargetType::Region:
         goal = bb->m_stRegionCenterPos;
-        bb->m_pTeam->AddRegionOccupyCost(bb->m_iTargetRegionIndex, 10);
-        bb->m_iRegionCostIndex = bb->m_iTargetRegionIndex;
 		break;
 	case eAstarTargetType::InRegionRandomPos:
 		goal = bb->m_stRegionInsidePos;
@@ -113,11 +101,15 @@ int CBT_FindPath::Run(st_BlackBoard* bb)
     }
 
     st_Pos start = bb->m_pEntity->GetPos();
-
+    
+    bb->m_pEntity->ClearMovePath();
     bool ret = bb->m_pMap->FindPath(start.X, start.Y, goal.X, goal.Y, bb->m_pEntity->GetAstarPath());
 
-	if (ret == false)
-		return eBTresult::Failed;
+    if (!ret)
+    {
+        bb->m_pEntity->GetAIController()->ReleaseReservation();
+        return eBTresult::Failed;
+    }
 
 	bb->m_pEntity->InitAstarPathtoMovePath();
 	bb->m_stGoalPos = goal;
@@ -193,19 +185,33 @@ int CBT_MoveSelector::Run(st_BlackBoard* bb)
 		return eBTresult::Failed;
     }
 
+    int child;
     // 임시
     switch (info.iType)
     {
 	case eSTAT_TYPE::None:
-		info.iType = 0;
+		child = 0;
 		break;
 	case eSTAT_TYPE::Door:
-		info.iType = 1;
+		child = 1;
 		break;
+    default:
+        child = 0;
+        break;
     }
-	ret = m_vecChild[info.iType]->Run(bb);
+    
+    if (child >= static_cast<int>(m_vecChild.size()))
+        return eBTresult::Failed;
+    
+    const auto generation = bb->m_runtimeGeneration;
+    
+    ret = m_vecChild[child]->Run(bb);
+    if (generation != bb->m_runtimeGeneration)
+        return eBTresult::Failed;
+    if (child == 1 && ret == eBTresult::Success)
+        return eBTresult::Running;
 
-    if(ret == eBTresult::Failed)
+    if(ret == eBTresult::Failed && child != 0)
 		ret = m_vecChild[0]->Run(bb);
 
     return ret;
@@ -227,90 +233,85 @@ int CBT_IsMove::Run(st_BlackBoard* bb)
 
 int CBT_ConditionBranch::Run(st_BlackBoard* bb)
 {
-    int branch = m_pCondition->Run(bb);
+    if (!m_pCondition)
+        return eBTresult::Failed;
+    
+    const auto generation = bb->m_runtimeGeneration;
+    const int branch = m_pCondition->Run(bb);
 
-	if (branch >= m_vecChild.size() || branch < 0)
-		return eBTresult::Failed;
-
-	return m_vecChild[branch]->Run(bb);
+    if (generation != bb->m_runtimeGeneration)
+        return eBTresult::Failed;
+    
+    if (branch == eBTresult::Running)
+        return eBTresult::Running;
+    
+    if (branch < 0 || branch >= static_cast<int>(m_vecChild.size()))
+        return eBTresult::Failed;
+    
+    for (int i = 0; i < static_cast<int>(m_vecChild.size()); ++i)
+    {
+        if (i != branch)
+            m_vecChild[i]->ResetSubtree(bb);
+    }
+    
+    return m_vecChild[branch]->Run(bb);
 }
 
 int CBT_FindEmptyOccupyRegion::Run(st_BlackBoard* bb)
 {
-    std::vector<int> vecRegionIndex;
-    bb->m_pTeam->GetEmptyRegion(vecRegionIndex);
-
-	int index = bb->m_pMap->GetNearRegion(vecRegionIndex, bb->m_pEntity->GetPos());
-
-	if (index == -1)
-		return eBTresult::Failed;
-
-    bb->m_iTargetRegionIndex = index;
-
-    CRegion* pRegion = bb->m_pMap->GetRegion(bb->m_iTargetRegionIndex);
-
-    bb->m_stRegionCenterPos = pRegion->GetPos();
-    bb->m_eAstarTargetType = eAstarTargetType::Region;
-
-    return eBTresult::Success;
-}
-
-int CBT_FindOtherOccupyRegion::Run(st_BlackBoard* bb)
-{
-    std::vector<int> vecRegionIndex;
-    bb->m_pTeam->GetOtherRegion(vecRegionIndex);
-
-    int index = bb->m_pMap->GetNearRegion(vecRegionIndex, bb->m_pEntity->GetPos());
+    bb->m_pEntity->GetAIController()->ReleaseReservation();
     
-    if (index == -1)
-        return eBTresult::Failed;
-
-    bb->m_iTargetRegionIndex = index;
-
-    CRegion* pRegion = bb->m_pMap->GetRegion(bb->m_iTargetRegionIndex);
-
-    bb->m_stRegionCenterPos = pRegion->GetPos();
-    bb->m_eAstarTargetType = eAstarTargetType::Region;
-
-    return eBTresult::Success;
-}
-
-int CBT_FindLowCostRegion::Run(st_BlackBoard* bb)
-{
-    int index = bb->m_pTeam->GetMinCostRegion();
-
-    CRegion* pRegion = bb->m_pMap->GetRegion(index);
-    if (pRegion == nullptr)
-        return eBTresult::Failed;
-
-    bb->m_iTargetRegionIndex = index;
-
-    bb->m_stRegionCenterPos = pRegion->GetPos();
-    bb->m_eAstarTargetType = eAstarTargetType::Region;
+    CRegion* best = nullptr;
+    long long bestCost = 0;
     
+    for (auto* region : bb->m_pMap->GetRegionVector())
+    {
+        if (region->GetOccupyTeam() == bb->m_pEntity->GetTeam())
+            continue;
+
+        const long long cost = bb->m_pEntity->GetPos().LengthLength(region->GetPos())
+            + 100LL * bb->m_pTeam->GetReservationCount(region->GetRegionIndex());
+
+        if (!best || cost < bestCost)
+        {
+            best = region;
+            bestCost = cost;
+        }
+    }
+
+    if (!best)
+        return eBTresult::Failed;
+    
+    bb->m_iTargetRegionIndex = best->GetRegionIndex();
+    bb->m_stRegionCenterPos = best->GetPos();
+    bb->m_eAstarTargetType = eAstarTargetType::Region;
+    bb->m_pEntity->GetAIController()->ReserveRegion(best->GetRegionIndex());
+    
+    if (bb->m_pMap->GetRegionIndex(bb->m_pEntity->GetPos()) == best->GetRegionIndex())
+    {
+        bb->m_pEntity->ChangeState(eState::Occupy);
+        bb->m_pEntity->GetAIController()->SetOccupyRegionIndex(best->GetRegionIndex());
+        return eBTresult::Failed;
+    }
     return eBTresult::Success;
 }
 
 int CBT_CheckEnemyInRegion::Run(st_BlackBoard* bb)
 {
-    int EnemyCount = bb->m_pMap->GetRegionOppositeCount(bb->m_iOccupyRegionIndex);
+    CRegion* region = bb->m_pMap->GetRegion(bb->m_iOccupyRegionIndex);
+    if (!region)
+    {
+        bb->m_pEntity->ChangeState(eState::Idle);
+        return eBTresult::Failed;
+    }
 
-	if (EnemyCount > 0)
-		return eBTresult::Success;
+    const eTeam enemy = bb->m_pEntity->GetTeam() == eTeam::Red ? eTeam::Blue : eTeam::Red;
+    if (region->GetTeamCount(enemy) > 0)
+    {
+        bb->m_pEntity->ChangeState(eState::Combat);
+        return eBTresult::Failed;
+    }
     return eBTresult::Failed;
-}
-
-int CBT_DectectionRegionEnemy::Run(st_BlackBoard* bb)
-{
-    if (bb->m_pEntity->GetCurrentRegionIndex() == -1)
-        return eBTresult::Failed;
-
-    eTeam enemyTeam = bb->m_pEntity->GetTeam() == eTeam::Red ? eTeam::Blue : eTeam::Red;
-    bb->m_vecDetectionRegionEnemy = bb->m_pMap->GetRegionTeamEntitys(enemyTeam, bb->m_pEntity->GetCurrentRegionIndex());
-    if (bb->m_vecDetectionRegionEnemy.empty())
-        return eBTresult::Failed;
-
-    return eBTresult::Success;
 }
 
 int CBT_FindOccupyingRegionInPos::Run(st_BlackBoard* bb)
@@ -327,12 +328,19 @@ int CBT_FindOccupyingRegionInPos::Run(st_BlackBoard* bb)
 
 int CBT_Occupy::Run(st_BlackBoard* bb)
 {
-    if(bb->m_pMap->GetRegion(bb->m_iOccupyRegionIndex)->GetOccupyTeam() == bb->m_pTeam->GetTeam())
+    CRegion* region = bb->m_pMap->GetRegion(bb->m_iOccupyRegionIndex);
+
+    if (!region) 
+    {
+        bb->m_pEntity->ChangeState(eState::Idle);
+        return eBTresult::Failed;
+    }
+
+    if (region->GetOccupyTeam() == bb->m_pTeam->GetTeam())
 	{
 		printf("Occupy Region[%d] eTeam %s\n", bb->m_iOccupyRegionIndex, bb->m_pTeam->GetTeam() == eTeam::Red ? "Red" : "Blue");
 		bb->m_pEntity->ChangeState(eState::Idle);
 
-        g_SimulatorManager->NotifyOccupyRegion(bb->m_iOccupyRegionIndex, bb->m_pTeam->GetTeam());
 		return eBTresult::Success;
 	}
 
@@ -405,6 +413,8 @@ int CBT_IsEnemyNearMoveTree::Run(st_BlackBoard* bb)
 
 int CBT_SetEnemyTarget::Run(st_BlackBoard* bb)
 {
+    g_SimulatorManager->FindNearEnemy(bb->m_pEntity, bb->m_vecDetectionEnemy);
+    
     if (bb->m_vecDetectionEnemy.size() <= 0)
         return eBTresult::Failed;
 
@@ -413,21 +423,6 @@ int CBT_SetEnemyTarget::Run(st_BlackBoard* bb)
 
     bb->m_iEnemyId = bb->m_vecDetectionEnemy[0]->GetId();
     bb->m_stEnemyPos = bb->m_vecDetectionEnemy[0]->GetPos();
-    bb->m_eAstarTargetType = eAstarTargetType::Enemy;
-
-    return eBTresult::Success;
-}
-
-int CBT_SetRegionEnemyTarget::Run(st_BlackBoard* bb)
-{
-    if (bb->m_vecDetectionRegionEnemy.size() <= 0)
-        return eBTresult::Failed;
-
-    if (!bb->m_vecDetectionRegionEnemy[0]->GetEnable())
-        return eBTresult::Failed;
-
-    bb->m_iEnemyId = bb->m_vecDetectionRegionEnemy[0]->GetId();
-    bb->m_stEnemyPos = bb->m_vecDetectionRegionEnemy[0]->GetPos();
     bb->m_eAstarTargetType = eAstarTargetType::Enemy;
 
     return eBTresult::Success;
@@ -455,8 +450,8 @@ int CBT_Attack::Run(st_BlackBoard* bb)
     return bb->m_pEntity->OnAttack(bb->m_iEnemyId);
 }
 
-int CBT_TempOccpuyCombatNode::Run(st_BlackBoard* bb)
+void CBTNode::ResetSubtree(st_BlackBoard* bb)
 {
-    bb->m_pEntity->ChangeState(eState::Combat);
-    return eBTresult::Success;
+    bb->m_mapRuntime.erase(this);
+    for (auto* child : m_vecChild) child->ResetSubtree(bb);
 }

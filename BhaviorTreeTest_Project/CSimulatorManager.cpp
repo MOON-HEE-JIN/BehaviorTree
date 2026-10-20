@@ -3,39 +3,52 @@
 
 CSimulatorManager* g_SimulatorManager;
 
-CSimulatorManager::CSimulatorManager()
+CSimulatorManager::CSimulatorManager(int redCount, int blueCount, bool scarecrows)
 {
 	m_iEntityId = 0;
 
-	SetUpdateTime( 10 * 60 * 1 * 1000);
-
 	CreateMap();
-
-	TWHEEL* update = new TWHEEL;
-	update->TotalTimer = GetUpdateTime();
-	update->pObj = this;
-	update->eUpdateType = eTUpdateType::End;
-
-	m_updateTimerWheel.Push(update);
 
 	m_vecRenderObject.push_back(m_pMap);
 
 	CTeam* pTeam = new CTeam(eTeam::None, 0);
 	m_vecTeam.push_back(pTeam);
-	CreateEntity(eTeam::Red, 5);
-	CreateEntity(eTeam::Blue, 5);
 
-	//CreateScarecrow();
+	CreateEntity(eTeam::Red, redCount);
+    CreateEntity(eTeam::Blue, blueCount);
+
+	SetUpdateTime(2 * 1000);
+	TWHEEL* pTweel = new TWHEEL;
+	pTweel->TotalTimer = 2 * 1000;
+	pTweel->pObj = this;
+	pTweel->eUpdateType = eTUpdateType::Event;
+
+	NewUpdatePushTimerWheel(pTweel);
+    // if (scarecrows) CreateScarecrow();
 }
 
 CSimulatorManager::~CSimulatorManager()
 {
-	delete m_pMap;
+    m_events.clear();
+    for (auto* entity : m_vecEntity) delete entity;
+    for (auto* team : m_vecTeam) delete team;
+    delete m_pMap;
 }
 
-void CSimulatorManager::NewUpdatePushTimerWheel(TWHEEL* pTweel)
+
+void CSimulatorManager::NewUpdatePushTimerWheel(TWHEEL* event)
 {
-	m_updateTimerWheel.Push(pTweel);
+    if (!event) return;
+    
+	if (m_events.count(event)) return;
+    
+	m_events.emplace(event, std::unique_ptr<TWHEEL>(event));
+    if (IsFinished())
+	{
+		m_events.erase(event);
+		return;
+	}
+    m_updateTimerWheel.Push(event);
 }
 
 void CSimulatorManager::NotifyOccupyRegion(int index, eTeam team)
@@ -49,54 +62,50 @@ void CSimulatorManager::NotifyOccupyRegion(int index, eTeam team)
 
 void CSimulatorManager::Update()
 {
+    std::lock_guard<std::recursive_mutex> lock(m_stateMutex);
+    
+	if (IsFinished())
+		return;
+    
 	m_updateTimerWheel.Update();
-
-	int nLoop = m_updateTimerWheel.GetCompleteDataCount();
-	const auto& vec = m_updateTimerWheel.GetCompleteData();
-	for (int i = 0; i < nLoop; i++)
-	{
-		TWHEEL* pTwheel = vec[i];
-		WinObject* pObject = pTwheel->pObj;
-
-		switch (pTwheel->eUpdateType)
+    
+	const auto& events = m_updateTimerWheel.GetCompleteData();
+    for (TWHEEL* event : events)
+    {
+        if (IsFinished())
 		{
-		case eTUpdateType::Object:
-			pObject->Update();
-
-			if (pObject->GetUpdateTime() == 0)
-			{
-				delete pTwheel;
-				break;
-			}
-			if (!pObject->GetEnable())
-			{
-				delete pTwheel;
-				break;
-			}
-
-			pTwheel->TotalTimer = pObject->GetUpdateTime();
-			m_updateTimerWheel.Push(pTwheel);
-
-			break;
-		case eTUpdateType::CoolTime:
-			pObject->CheckCoolTime(pTwheel->iSkillIndex);
-			delete pTwheel;
-			break;
-		case eTUpdateType::DuringTime:
-			pObject->CheckDuringTime(pTwheel->iSkillIndex);
-			delete pTwheel;
-			break;
-		case eTUpdateType::End:
-			break;
+			m_events.erase(event);
+			continue;
 		}
+        
+		WinObject* object = event->pObj;
 
-	}
+        if (!object || !object->GetEnable()) { m_events.erase(event); continue; }
+        switch (event->eUpdateType)
+        {
+        case eTUpdateType::Object: object->Update(); break;
+        case eTUpdateType::CoolTime: object->CheckCoolTime(event->iSkillIndex); break;
+        case eTUpdateType::DuringTime: object->CheckDuringTime(event->iSkillIndex); break;
+		case eTUpdateType::Event: CheckEndCondition(); break;
+        default: break;
+        }
 
-	m_updateTimerWheel.ClearCompleteData();
+		if (!IsFinished() &&
+			event->eUpdateType == eTUpdateType::Object &&
+			object->GetEnable() &&
+			object->GetUpdateTime() > 0)
+        {
+            event->TotalTimer = object->GetUpdateTime();
+            m_updateTimerWheel.Push(event);
+        }
+        else m_events.erase(event);
+    }
+    m_updateTimerWheel.ClearCompleteData();
 }
 
 void CSimulatorManager::Render(HDC hdc)
 {
+    std::lock_guard<std::recursive_mutex> lock(m_stateMutex);
 	int nLoop = m_vecRenderObject.size();
 	for (int i = 0; i < nLoop; i++)
 	{
@@ -116,7 +125,8 @@ void CSimulatorManager::CreateMap()
 	pMapTweel->TotalTimer = 1000;
 	pMapTweel->pObj = m_pMap;
 	pMapTweel->eUpdateType = eTUpdateType::Object;
-	m_updateTimerWheel.Push(pMapTweel);
+
+	NewUpdatePushTimerWheel(pMapTweel);
 
 	const std::vector<CRegion*>& vec = m_pMap->GetRegionVector();
 	int nLoop = vec.size();
@@ -129,21 +139,24 @@ void CSimulatorManager::CreateMap()
 		tweel->pObj = vec[i];
 		tweel->eUpdateType = eTUpdateType::Object;
 
-		m_updateTimerWheel.Push(tweel);
+		NewUpdatePushTimerWheel(tweel);
 	}
 }
 
 void CSimulatorManager::CreateEntity(eTeam team, int count)
 {
-	CTeam* pTeam = new CTeam(team, m_pMap->GetRegionCount());
-	st_Pos SpawnPos = m_pMap->GetSpawnPos((int)team);
-	m_vecTeam.push_back(pTeam);
+    CTeam* pTeam = GetTeam(team);
+    if (!pTeam) 
+	{ 
+		pTeam = new CTeam(team, m_pMap->GetRegionCount()); m_vecTeam.push_back(pTeam);
+	}
 
 	for (int i = 0; i < count; i++)
 	{
 		CEntity* pEntity = new CEntity(team, m_iEntityId++);
-		
-		pEntity->Init({SpawnPos.X - 2 + i * 2, SpawnPos.Y});
+		st_Pos SpawnPos = m_pMap->GetSpawnPos((int)team);
+
+		pEntity->Init(SpawnPos);
 		pEntity->SetTeam(pTeam);
 
 		TWHEEL* pTweel = new TWHEEL;
@@ -151,37 +164,18 @@ void CSimulatorManager::CreateEntity(eTeam team, int count)
 		pTweel->pObj = pEntity;
 		pTweel->eUpdateType = eTUpdateType::Object;
 
-		m_updateTimerWheel.Push(pTweel);
+		NewUpdatePushTimerWheel(pTweel);
 
 		m_vecRenderObject.push_back(pEntity);
 		m_vecEntity.push_back(pEntity);
 		m_mapTeamEntity[team].push_back(pEntity);
 	}
-
-	std::vector<st_RegionCost> vec;
-	for (auto& obj : m_pMap->GetRegionVector())
-	{
-		st_RegionCost cost;
-		cost.index = obj->GetRegionIndex();
-		cost.cost = SpawnPos.LengthLength(obj->GetPos());
-		vec.push_back(cost);
-	}
-
-	std::sort(vec.begin(), vec.end(),
-		[](const st_RegionCost& A, const st_RegionCost& B)
-		{
-			return A.cost > B.cost;
-		});
-
-	int initcost = m_pMap->GetRegionCount();
-	for (auto& obj : vec)
-	{
-		pTeam->AddRegionOccupyCost(obj.index, initcost--);
-	}
 }
 
 void CSimulatorManager::CreateScarecrow()
 {
+// 허수아비 테스트용 코드
+	if (m_mapTeamEntity[eTeam::Red].empty() || IsFinished()) return;
 	int d = 4;
 	for (int i = 0; i < 3; i++)
 	{
@@ -215,7 +209,8 @@ CEntity* CSimulatorManager::GetEntity(int id)
 		return nullptr;
 
 	CEntity* pEntity = m_vecEntity[id];
-	if (pEntity->GetState() == eState::Dead)
+
+	if (!pEntity->GetEnable() || pEntity->GetState() == eState::Dead)
 		return nullptr;
 
 	return pEntity->GetId() == id ? pEntity : nullptr;
@@ -224,10 +219,11 @@ CEntity* CSimulatorManager::GetEntity(int id)
 int CSimulatorManager::FindNearEnemy(CEntity* pEntity, std::vector<CEntity*>& vec)
 {
 	vec.clear();
-	eTeam team = pEntity->GetTeam() == eTeam::Red ? eTeam::Blue : eTeam::Red;
 
-	if (team == eTeam::None)
+	if (pEntity->GetTeam() == eTeam::None)
 		return 0;
+	
+	eTeam team = pEntity->GetTeam() == eTeam::Red ? eTeam::Blue : eTeam::Red;
 
 	std::vector<CEntity*>& v = m_mapTeamEntity[team];
 	int loop = v.size();
@@ -245,18 +241,21 @@ int CSimulatorManager::FindNearEnemy(CEntity* pEntity, std::vector<CEntity*>& ve
 			continue;
 
 		int dist = pos.LengthLength(pEnemy->GetPos());
-		if (dd < dist)
+        
+		if (dd < dist &&
+			(pEntity->GetCurrentRegionIndex() < 0 || pEntity->GetCurrentRegionIndex() != pEnemy->GetCurrentRegionIndex()))
 			continue;
 
 		vec.push_back(pEnemy);
 	}
 	std::sort(vec.begin(), vec.end(),
 		[&pos](const CEntity* pA, const CEntity* pB)
-	{
+		{
 			int dist1 = pos.LengthLength(pA->GetPos());
 			int dist2 = pos.LengthLength(pB->GetPos());
-			return dist1 < dist2;
-	});
+			
+			return dist1 == dist2 ? pA->GetId() < pB->GetId() : dist1 < dist2;
+		});
 #ifdef __DEBUG__
 	for (auto p : vec)
 	{
@@ -266,4 +265,48 @@ int CSimulatorManager::FindNearEnemy(CEntity* pEntity, std::vector<CEntity*>& ve
 #endif // __DEBUG__
 
 	return vec.size();
+}
+
+void CSimulatorManager::CheckEndCondition()
+{
+    if (IsFinished())
+		return;
+
+    if (m_pMap->AllRegionOccupy())
+	{ 
+		Finish(EndReason::AllRegionsCaptured);
+		return;
+	}
+
+    const bool alive = std::any_of(m_vecEntity.begin(), m_vecEntity.end(),
+		[](const CEntity* entity) {
+        return entity->GetEnable() && entity->GetState() != eState::Dead && entity->GetState() != eState::End;
+    });
+
+    if (!alive)
+		Finish(EndReason::NoLivingEntities);
+}
+
+void CSimulatorManager::Finish(EndReason reason)
+{
+    if (IsFinished())
+		return;
+    m_result.reason = reason;
+
+    for (auto* region : m_pMap->GetRegionVector())
+    {
+        if (region->GetOccupyTeam() == eTeam::Red)
+			++m_result.red;
+        else if (region->GetOccupyTeam() == eTeam::Blue)
+			++m_result.blue;
+    }
+
+    m_result.winner = m_result.red == m_result.blue ? eTeam::None : m_result.red > m_result.blue ? eTeam::Red : eTeam::Blue;
+	
+	for (auto* entity : m_vecEntity)
+	{
+		if (entity->GetEnable()) entity->ChangeState(eState::End);
+	}
+
+	printf("End Simulator: reason=%d Red=%d Blue=%d winner=%d\n", static_cast<int>(reason), m_result.red, m_result.blue, static_cast<int>(m_result.winner));
 }

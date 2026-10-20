@@ -11,20 +11,17 @@ public:
 private:
 	eTeam m_eTeam;
 	std::vector<eTeam> m_vecRegionOccupy;
-	std::vector<st_RegionCost> m_vecRegionOccupyCost;
 
 	int m_iMemberCount;
 	int m_iAliveCount;
+	std::vector<int> m_reservations;
 
 public:
-	void OnOccupyRegion(int regionindex, eTeam team);
-
-	void AddMember() { m_iMemberCount++; m_iAliveCount++; }
-	void AddRegionOccupyCost(int regionindex, int _cost);
-
-
 	eTeam GetTeam() const { return m_eTeam; }
 	void GetEmptyRegion(std::vector<int>& vec) const;
-	void GetOtherRegion(std::vector<int>& vec) const;
-	int GetMinCostRegion();
+
+	int GetReservationCount(int index) const;
+	void ChangeReservation(int index, int delta);
+	void AddMember() { m_iMemberCount++; m_iAliveCount++; }
+	void OnOccupyRegion(int regionindex, eTeam team);
 };

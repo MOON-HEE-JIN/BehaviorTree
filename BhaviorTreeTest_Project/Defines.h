@@ -49,6 +49,7 @@ enum eTUpdateType
 	Object,
 	CoolTime,
 	DuringTime,
+	Event,
 	End,
 };
 
@@ -99,10 +100,4 @@ struct st_PosInfo
 {
 	int iType;
 	st_Pos pos;
-};
-
-struct st_RegionCost
-{
-	int index;
-	int cost;
 };

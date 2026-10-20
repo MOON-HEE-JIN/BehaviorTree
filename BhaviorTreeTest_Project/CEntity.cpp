@@ -30,7 +30,7 @@ CEntity::CEntity(eTeam team, int id)
 
 	
 	SetRenderPrivateSize(16);
-	SetDetectionRadius(16);
+	SetDetectionRadius(8);
 
 	SetUpdateTime(250);
 }
@@ -63,7 +63,7 @@ void CEntity::RenderDetection(HDC hdc)
 	graphics.DrawEllipse(&m_hDetectionPen, X, Y, Size, Size);
 }
 
-void CEntity::Init(st_Pos spawnpos)
+void CEntity::Init(st_Pos& spawnpos)
 {
 	SetPos(spawnpos);
 	SetAttackRange(5);
@@ -74,7 +74,8 @@ void CEntity::Init(st_Pos spawnpos)
 
 void CEntity::Update()
 {
-	m_ai.Update();
+	if (GetEnable())
+		m_ai.Update();
 }
 
 void CEntity::Render(HDC hdc)
@@ -96,6 +97,12 @@ void CEntity::OnSpawn()
 	ChangeState(eState::Idle);
 	m_ai.SetMap(g_SimulatorManager->GetMap());
 	m_ai.SetTarget(this);
+    m_ai.SetMap(g_SimulatorManager->GetMap());
+    m_iCurrentRegionIndex = m_ai.GetMap()->GetRegionIndex(m_stPos);
+    
+	if (auto* region = m_ai.GetMap()->GetRegion(m_iCurrentRegionIndex))
+		region->EnterRegion(m_eTeam, this);
+
 }
 
 int CEntity::OnAttack(int id)
@@ -113,6 +120,8 @@ int CEntity::OnAttack(int id)
 
 int CEntity::OnDamage(int id, int damage)
 {
+	if (!GetEnable() || damage <= 0)
+		return 0;
 	int preHP = m_iHP;
 	m_iHP -= damage;
 	
@@ -124,16 +133,18 @@ int CEntity::OnDamage(int id, int damage)
 
 void CEntity::OnDead()
 {
-	SetEnable(false);
-
-	if (m_iCurrentRegionIndex != -1)
-	{
-		CRegion* Region = m_ai.GetMap()->GetRegion(m_iCurrentRegionIndex);
-		if (Region)
-		{
-			Region->ExitRegion(m_eTeam, this);
-		}
-	}
+    if (g_SimulatorManager && g_SimulatorManager->IsFinished()) return;
+    
+	if (!GetEnable())
+		return;
+    
+	if (m_ai.GetMap())
+        if (auto* region = m_ai.GetMap()->GetRegion(m_iCurrentRegionIndex))
+			region->ExitRegion(m_eTeam, this);
+    
+	m_iCurrentRegionIndex = -1;
+    ChangeState(eState::Dead);
+    SetEnable(false);
 }
 
 bool CEntity::GetMoveNextPosInfo(st_PosInfo& posinfo)
@@ -150,6 +161,8 @@ bool CEntity::GetMoveNextPosInfo(st_PosInfo& posinfo)
 
 void CEntity::InitAstarPathtoMovePath()
 {
+	if (m_vecAstarPath.empty())
+		return;
 	st_Pos nodePos = m_vecAstarPath.back();
 	m_vecAstarPath.pop_back();
 
@@ -158,9 +171,12 @@ void CEntity::InitAstarPathtoMovePath()
 
 void CEntity::ChangeState(eState state)
 {
-	m_ai.ResetRuntime();
-
-	m_eState = state;
+    if (state == m_eState)
+		return;
+    
+	m_ai.CancelAction();
+    ClearMovePath();
+    m_eState = state;
 }
 
 bool CEntity::NetMovePath()
@@ -196,6 +212,7 @@ int CEntity::Move()
 	st_Pos OldPos = m_stPos;
 
 	SetPos(m_queueMovePath.front().pos);
+	m_queueMovePath.pop();
 
 	int oldRegionIndex = m_ai.GetMap()->GetRegionIndex(OldPos);
 	m_iCurrentRegionIndex = m_ai.GetMap()->GetRegionIndex(m_stPos);
@@ -209,12 +226,12 @@ int CEntity::Move()
 		if (pNewRegion)
 			pNewRegion->EnterRegion(m_eTeam, this);
 		
-        if (m_iCurrentRegionIndex != -1 && m_iCurrentRegionIndex == m_ai.GetTargetRegionIndex())
+        if (m_iCurrentRegionIndex != -1)
 		{
 			CRegion* pNewRegion = m_ai.GetMap()->GetRegion(m_iCurrentRegionIndex);
 			if (pNewRegion)
 			{
-				if (pNewRegion->GetOccupyTeam() != m_eTeam)
+				if (m_eState != eState::Combat && pNewRegion->GetOccupyTeam() != m_eTeam)
 				{
 					ChangeState(eState::Occupy);
 					m_ai.SetOccupyRegionIndex(m_iCurrentRegionIndex);
@@ -224,7 +241,17 @@ int CEntity::Move()
 
 	}
 
-	m_queueMovePath.pop();
-
 	return eBTresult::Running;
+}
+
+CEntity::~CEntity()
+{
+    if (m_hRenderBrush) DeleteObject(m_hRenderBrush);
+}
+
+void CEntity::ClearMovePath()
+{
+    m_vecAstarPath.clear();
+    std::queue<st_PosInfo> empty;
+    m_queueMovePath.swap(empty);
 }
