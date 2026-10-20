@@ -19,6 +19,8 @@ HPEN g_BlackPen;
 CMap::CMap()
 {
 	m_astar.SetMapInit(MAP_SIZE_WH, MAP_SIZE_WH);
+	m_iDiagonalLine = MAP_SIZE_WH * MAP_SIZE_WH * 2; // 0,0 => 마지막까지 거리
+
 	g_BlackPen = (HPEN)CreatePen(BS_SOLID, 1, RGB(0, 0, 0));
 
 	std::ifstream fp("SimulatorMap.txt");
@@ -180,6 +182,15 @@ int CMap::GetRegionOppositeCount(int regionindex)
 		return 0;
 
 	return pRegion->GetOppositeCount();
+}
+
+int CMap::GetRegionDistanceToPos(int regionindex, st_Pos& pos)
+{
+	CRegion* pRegion = GetRegion(regionindex);
+	if (pRegion == nullptr)
+		return 0;
+
+	return pRegion->GetPos().LengthLength(pos);
 }
 
 bool CMap::FindShape(int sX, int sY, st_Rect& region, std::vector<st_Part>& vecParts)

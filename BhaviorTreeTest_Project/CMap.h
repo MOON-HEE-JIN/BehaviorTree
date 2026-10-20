@@ -17,6 +17,7 @@ public:
 	~CMap();
 private:
 	int m_iGridRenderSize = 8;
+	int m_iDiagonalLine;
 	CAstar m_astar;
 	std::vector<CRegion*> m_vecRegion;
 	std::unordered_map<__int64, CPartsBase*> m_mapParts;
@@ -46,7 +47,8 @@ public:
 	int GetRegionIndex(st_Pos pos) { return pos.X >= 0 && pos.Y >= 0 && pos.X < MAP_SIZE_WH && pos.Y < MAP_SIZE_WH ? m_vecMapStat[pos.Y][pos.X].iRegionIndex : -1; }
 	eTeam GetRegionOccupyTeam(int regionindex) { return m_vecRegion[regionindex]->GetOccupyTeam(); }
 	int GetRegionOppositeCount(int regionindex);
-
+	int GetRegionDistanceToPos(int regionindex, st_Pos& pos);
+	int GetDiagonalLine() { return m_iDiagonalLine; }
 private:
 	void RenderGrid(HDC hdc);
 	bool FindShape(int sX, int sY, st_Rect& region, std::vector<st_Part>& vecParts);

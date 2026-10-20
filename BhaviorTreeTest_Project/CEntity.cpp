@@ -63,7 +63,7 @@ void CEntity::RenderDetection(HDC hdc)
 	graphics.DrawEllipse(&m_hDetectionPen, X, Y, Size, Size);
 }
 
-void CEntity::Init(st_Pos& spawnpos)
+void CEntity::Init(st_Pos spawnpos)
 {
 	SetPos(spawnpos);
 	SetAttackRange(5);

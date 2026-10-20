@@ -146,17 +146,23 @@ void CSimulatorManager::CreateMap()
 void CSimulatorManager::CreateEntity(eTeam team, int count)
 {
     CTeam* pTeam = GetTeam(team);
-    if (!pTeam) 
+	st_Pos SpawnPos = m_pMap->GetSpawnPos((int)team);
+
+	if (!pTeam) 
 	{ 
-		pTeam = new CTeam(team, m_pMap->GetRegionCount()); m_vecTeam.push_back(pTeam);
+		pTeam = new CTeam(team, m_pMap->GetRegionCount());
+		m_vecTeam.push_back(pTeam);
+		
+		int count = m_pMap->GetRegionCount();
+		for (int i = 0; i < count; ++i)
+			pTeam->AddCost(i, m_pMap->GetRegionDistanceToPos(i, SpawnPos));
 	}
 
 	for (int i = 0; i < count; i++)
 	{
 		CEntity* pEntity = new CEntity(team, m_iEntityId++);
-		st_Pos SpawnPos = m_pMap->GetSpawnPos((int)team);
-
-		pEntity->Init(SpawnPos);
+		
+		pEntity->Init({ SpawnPos.X - 2 + i, SpawnPos.Y });
 		pEntity->SetTeam(pTeam);
 
 		TWHEEL* pTweel = new TWHEEL;

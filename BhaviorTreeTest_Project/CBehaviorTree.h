@@ -89,6 +89,12 @@ public:
 	int Run(st_BlackBoard* bb) override;
 };
 
+class CBT_FindLowCostOccupyRegion : public CBT_Condition
+{
+public:
+	int Run(st_BlackBoard* bb) override;
+};
+
 class CBT_FindPath : public CBT_Condition
 {
 public:

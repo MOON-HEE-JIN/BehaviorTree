@@ -262,17 +262,16 @@ int CBT_FindEmptyOccupyRegion::Run(st_BlackBoard* bb)
     bb->m_pEntity->GetAIController()->ReleaseReservation();
     
     CRegion* best = nullptr;
-    long long bestCost = 0;
+    unsigned long long bestCost = 0xffffffffffffffff;
     
     for (auto* region : bb->m_pMap->GetRegionVector())
     {
         if (region->GetOccupyTeam() == bb->m_pEntity->GetTeam())
             continue;
 
-        const long long cost = bb->m_pEntity->GetPos().LengthLength(region->GetPos())
-            + 100LL * bb->m_pTeam->GetReservationCount(region->GetRegionIndex());
+        const long long cost = bb->m_pTeam->GetCost(region->GetRegionIndex()) + bb->m_pTeam->GetReservationCount(region->GetRegionIndex());
 
-        if (!best || cost < bestCost)
+        if (cost < bestCost)
         {
             best = region;
             bestCost = cost;
@@ -295,6 +294,12 @@ int CBT_FindEmptyOccupyRegion::Run(st_BlackBoard* bb)
     }
     return eBTresult::Success;
 }
+
+int CBT_FindLowCostOccupyRegion::Run(st_BlackBoard* bb)
+{
+    return 0;
+}
+
 
 int CBT_CheckEnemyInRegion::Run(st_BlackBoard* bb)
 {
