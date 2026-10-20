@@ -28,6 +28,12 @@ int CBT_Selector::Run(st_BlackBoard* bb)
 		}
     }
 
+    if (ret == eBTresult::Success)
+    {
+        if (runtime != bb->m_mapRuntime.end())
+            bb->m_mapRuntime.erase(runtime);
+    }
+
     return ret;
 }
 
@@ -53,6 +59,12 @@ int CBT_Sequence::Run(st_BlackBoard* bb)
 			bb->PushRuntime(this, st_RuntimeNodeInfo{ i });
             break;
         }
+    }
+    
+    if (ret == eBTresult::Success)
+    {
+        if (runtime != bb->m_mapRuntime.end())
+            bb->m_mapRuntime.erase(runtime);
     }
 
     return ret;
@@ -293,7 +305,8 @@ int CBT_DectectionRegionEnemy::Run(st_BlackBoard* bb)
     if (bb->m_pEntity->GetCurrentRegionIndex() == -1)
         return eBTresult::Failed;
 
-    bb->m_vecDetectionRegionEnemy = bb->m_pMap->GetRegionTeamEntitys(bb->m_pEntity->GetTeam(), bb->m_pEntity->GetCurrentRegionIndex());
+    eTeam enemyTeam = bb->m_pEntity->GetTeam() == eTeam::Red ? eTeam::Blue : eTeam::Red;
+    bb->m_vecDetectionRegionEnemy = bb->m_pMap->GetRegionTeamEntitys(enemyTeam, bb->m_pEntity->GetCurrentRegionIndex());
     if (bb->m_vecDetectionRegionEnemy.empty())
         return eBTresult::Failed;
 
